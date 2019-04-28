@@ -6,12 +6,16 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "kcftracker.hpp"
+#include "../include/kcftracker.hpp"
 
 #include <dirent.h>
+#include <kalman_filter.h>
+
+#include <chrono>
 
 using namespace std;
 using namespace cv;
+using namespace chrono;
 
 
 void webcam_run(KCFTracker& tracker) {
@@ -21,6 +25,8 @@ void webcam_run(KCFTracker& tracker) {
 	cv::Mat frame;
 	cv::Rect box;
 	bool is_first = true;
+
+	Kalman kalman;
 
 	while (true){
 		video.read(frame);
@@ -41,16 +47,27 @@ void webcam_run(KCFTracker& tracker) {
 			is_first = false;
 
 		} else if (!is_first){
+            auto T = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+
 			box = tracker.update(frame);
-			printf("after update {%d, %d, %d, %d}\n", box.x, box.y, box.width, box.height);
 			cv::rectangle(frame, box, cv::Scalar(0, 0, 255), 3);
+
+			auto T_new = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+			auto kalman_box = kalman.predict(float((T_new - T).count()) / 1000, box);
+
+			cv::rectangle(frame, kalman_box, cv::Scalar(0, 255, 0), 3);
+
+			printf("after update {%d, %d, %d, %d}  ---  {%d, %d, %d, %d}\n",
+					box.x, box.y, box.width, box.height,
+				    kalman_box.x, kalman_box.y, kalman_box.width, kalman_box.height
+					);
 		}
 
 		cv::imshow("webcam", frame);
 	}
 
 	video.release();
-
+    cv::destroyAllWindows();
 }
 
 

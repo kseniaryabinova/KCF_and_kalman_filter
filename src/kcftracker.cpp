@@ -81,11 +81,11 @@ the use of this software, even if advised of the possibility of such damage.
  */
 
 #ifndef _KCFTRACKER_HEADERS
-#include "kcftracker.hpp"
-#include "ffttools.hpp"
-#include "recttools.hpp"
-#include "fhog.hpp"
-#include "labdata.hpp"
+#include "../include/kcftracker.hpp"
+#include "../include/ffttools.hpp"
+#include "../include/recttools.hpp"
+#include "../include/fhog.hpp"
+#include "../include/labdata.hpp"
 #endif
 
 // Constructor
@@ -182,6 +182,7 @@ cv::Rect KCFTracker::update(cv::Mat image)
 
 
     float peak_value;
+
     cv::Point2f res = detect(_tmpl, getFeatures(image, 0, 1.0f), peak_value);
 
     if (scale_step != 1) {
@@ -267,6 +268,12 @@ void KCFTracker::train(cv::Mat x, float train_interp_factor)
     
     _tmpl = (1 - train_interp_factor) * _tmpl + (train_interp_factor) * x;
     _alphaf = (1 - train_interp_factor) * _alphaf + (train_interp_factor) * alphaf;
+
+    cv::Mat filter_after_resize;
+    cv::resize(real(hann), filter_after_resize, cv::Size(_alphaf.rows*10, _alphaf.cols*10));
+    cv::imshow("filter", filter_after_resize);
+    cv::waitKey(1);
+
 
 
     /*cv::Mat kf = fftd(gaussianCorrelation(x, x));
