@@ -27,6 +27,7 @@ void webcam_run(KCFTracker& tracker) {
 	bool is_first = true;
 
 	Kalman kalman;
+	microseconds T;
 
 	while (true){
 		video.read(frame);
@@ -47,13 +48,13 @@ void webcam_run(KCFTracker& tracker) {
 			is_first = false;
 
 		} else if (!is_first){
-            auto T = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+			T = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 
 			box = tracker.update(frame);
 			cv::rectangle(frame, box, cv::Scalar(0, 0, 255), 3);
 
-			auto T_new = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-			auto kalman_box = kalman.predict(float((T_new - T).count()) / 1000, box);
+			auto T_new = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+			auto kalman_box = kalman.predict(float((T_new - T).count()) / 1'000'000, box);
 
 			cv::rectangle(frame, kalman_box, cv::Scalar(0, 255, 0), 3);
 

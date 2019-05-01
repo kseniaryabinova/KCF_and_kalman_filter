@@ -36,6 +36,13 @@ public:
         printf("kalman was initialized\n");
     }
 
+    void set_from_genome(const double* gene){
+        mempcpy(this->B.data, gene, sizeof(double) * 16);
+        mempcpy(this->u.data, gene + 16, sizeof(double) * 4);
+        mempcpy(this->S.data, gene + 16 + 4, sizeof(double) * 16);
+        mempcpy(this->R.data, gene + 16 + 4 + 16, sizeof(double) * 4);
+    }
+
     void set_A(double T){
         double data[] = {
                 1, 0, T, 0,
@@ -49,11 +56,18 @@ public:
     }
 
     void set_Q(double T){
+//        double data[] = {
+//                (0.25 * T * T * T * T), 0, (0.5 * T * T * T), 0,
+//                0, (0.25 * T * T * T * T), 0, (0.5 * T * T * T),
+//                (0.5 * T * T * T), 0, (T * T), 0,
+//                0, (0.5 * T * T * T), 0, (T * T)
+//        };
+
         double data[] = {
-                double(0.25*T*T*T*T), 0, double(0.5*T*T*T), 0,
-                0, double(0.25*T*T*T*T), 0, double(0.5*T*T*T),
-                double(0.5*T*T*T), 0, double(T*T), 0,
-                0, double(0.5*T*T*T), 0, double(T*T)
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
         };
 
         this->Q.release();
@@ -129,15 +143,15 @@ private:
 
     void dummy_init_matrices(){
         double B_data[] = {
-                0.8, 0, 0, 0,
-                0, 0.8, 0, 0,
-                0, 0, 0.8, 0,
-                0, 0, 0, 0.8
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1
         };
         B = cv::Mat(4, 4, CV_64F, B_data);
 
         double u_data[] = {
-                0, 0, 0, 0
+                1.2, 1.3, 1.5, 1
         };
         u = cv::Mat(4, 1, CV_64F, u_data);
 
