@@ -23,10 +23,10 @@ namespace genetic_alg{
 
         typedef std::pair<std::unique_ptr<Genome>, std::unique_ptr<Genome>> children;
 
-        static int number;
+        static int counter;
 
         Genome(bool is_random = false) {
-            ++number;
+            number = ++counter;
 
             if (is_random){
                 for (double &i : data) {
@@ -91,6 +91,8 @@ namespace genetic_alg{
             return init_rand(mt) * (high - low) + low;
         }
 
+        int number;
+
         double p;
         double fitness_value;
 
@@ -98,7 +100,7 @@ namespace genetic_alg{
         double accuracy;
     };
 
-    int Genome::number = 0;
+    int Genome::counter = 0;
 
 
 

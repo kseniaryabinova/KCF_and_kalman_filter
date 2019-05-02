@@ -271,8 +271,8 @@ void KCFTracker::train(cv::Mat x, float train_interp_factor)
 
     cv::Mat filter_after_resize;
     cv::resize(real(hann), filter_after_resize, cv::Size(_alphaf.rows*10, _alphaf.cols*10));
-    cv::imshow("filter", filter_after_resize);
-    cv::waitKey(1);
+//    cv::imshow("filter", filter_after_resize);
+//    cv::waitKey(1);
 
 
 
@@ -523,4 +523,14 @@ float KCFTracker::subPixelPeak(float left, float center, float right)
         return 0;
     
     return 0.5 * (right - left) / divisor;
+}
+
+KCFTracker::~KCFTracker() {
+    hann.release();
+    _alphaf.release();
+    _prob.release();
+    _tmpl.release();
+    _num.release();
+    _den.release();
+    _labCentroids.release();
 }

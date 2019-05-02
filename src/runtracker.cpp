@@ -72,7 +72,7 @@ void webcam_run(KCFTracker& tracker) {
 }
 
 
-int main(int argc, char* argv[]){
+int main1(int argc, char* argv[]){
 
 	if (argc > 5) return -1;
 
