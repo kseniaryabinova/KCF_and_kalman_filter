@@ -9,7 +9,7 @@ endif(NOT WIN32)
 
 include_directories(include)
 FILE(GLOB_RECURSE sourcefiles "src/*.cpp")
-add_executable( KCF ${sourcefiles} include/genetic_algorithm.h)
+add_executable( KCF ${sourcefiles} include/run_instance.h)
 target_link_libraries( KCF ${OpenCV_LIBS})
 
 

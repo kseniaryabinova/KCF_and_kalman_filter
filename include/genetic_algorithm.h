@@ -14,6 +14,7 @@ namespace genetic_alg{
     std::random_device rd;
     std::mt19937 mt(rd());
     std::uniform_real_distribution<double> init_rand(0., 1.);
+    std::uniform_real_distribution<double> mutate_rand(-1., 1.);
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
     std::uniform_int_distribution<int> crossingover_dist_hi(GENOME_LENGTH / 2 + 1, GENOME_LENGTH - 1);
 
@@ -26,8 +27,6 @@ namespace genetic_alg{
 
         Genome(bool is_random = false) {
             ++number;
-
-            std::srand ((unsigned int)(time(nullptr) / 2));
 
             if (is_random){
                 for (double &i : data) {
@@ -76,6 +75,16 @@ namespace genetic_alg{
             return sqrt(distance);
         }
 
+        void mutate(){
+            double threshold = init_rand(mt);
+
+            for (double &i : this->data) {
+                if (init_rand(mt) > threshold){
+                    i += mutate_rand(mt);
+                }
+            }
+        }
+
     private:
 
         double get_random(double low, double high){
@@ -96,18 +105,35 @@ namespace genetic_alg{
     const int START_AMOUNT = 100;
     const int MAX_AMOUNT = 120;
 
+    typedef std::vector<std::unique_ptr<Genome>> People;
+
     class Population{
     public:
         Population() {
+            std::srand ((unsigned int)(time(nullptr) / 2));
+
             for (int i=0; i<START_AMOUNT; ++i){
                 people.emplace_back(std::make_unique<Genome>());
             }
         }
 
+        std::unique_ptr<Genome> find_parent(const std::unique_ptr<Genome> person) {
+            int index = 0;
+            double min_distance = 1'000'000'000;
 
+            for (int i = 0; i < people.size(); ++i) {
+                double distance = people[i].get()->get_distance(person.get());
 
-    private:
-        std::vector<std::unique_ptr<Genome>> people;
+                if (min_distance > distance) {
+                    min_distance = distance;
+                    index = i;
+                }
+            }
+
+            return std::move(people[index]);
+        }
+
+        People people;
     };
 
 }

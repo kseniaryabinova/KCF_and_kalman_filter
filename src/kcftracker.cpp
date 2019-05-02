@@ -186,7 +186,7 @@ cv::Rect KCFTracker::update(cv::Mat image)
     cv::Point2f res = detect(_tmpl, getFeatures(image, 0, 1.0f), peak_value);
 
     if (scale_step != 1) {
-        // Test at a smaller _scale
+        // Statistics at a smaller _scale
         float new_peak_value;
         cv::Point2f new_res = detect(_tmpl, getFeatures(image, 0, 1.0f / scale_step), new_peak_value);
 
@@ -198,7 +198,7 @@ cv::Rect KCFTracker::update(cv::Mat image)
             _roi.height /= scale_step;
         }
 
-        // Test at a bigger _scale
+        // Statistics at a bigger _scale
         new_res = detect(_tmpl, getFeatures(image, 0, scale_step), new_peak_value);
 
         if (scale_weight * new_peak_value > peak_value) {
