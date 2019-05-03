@@ -15,9 +15,10 @@ namespace genetic_alg{
 
     const int GENOME_LENGTH = 16 + 4 + 16 + 4 + 16;
 
+    std::fstream log_file("/home/ksenia/progas/log.log", std::fstream::out | std::fstream::trunc);
+
     std::random_device rd;
     std::mt19937 mt(rd());
-    // TODO fix random
     std::uniform_real_distribution<double> init_rand(0., 1.);
     std::uniform_real_distribution<double> mutate_rand(-1., 1.);
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
@@ -134,15 +135,28 @@ namespace genetic_alg{
             p = F_i / F_i_sum;
         }
 
+        void log_info(){
+            log_file << "person #" << this->get_number() <<
+                        " acc=" << this->accuracy <<
+                        " rob=" << this->robustness <<
+                        " fit=" << this->fitness_value <<
+                        " p=" << this->p << std::endl;
+
+            log_file.flush();
+
+            printf("\t---- info has been logged ----\n");
+        }
+
         double fitness_value;
         double p;
 
-    private:
-        int number;
-        double F_i;
-
         double robustness;
         double accuracy;
+
+    private:
+        int number;
+
+        double F_i;
 
         std::string path_to_bboxes_dir = "/home/ksenia/bboxes_info";
     };
@@ -159,10 +173,11 @@ namespace genetic_alg{
     class Population{
     public:
         Population() {
+            log_file.precision(5);
             std::srand ((unsigned int)(time(nullptr) / 2));
 
             for (int i=0; i<START_AMOUNT; ++i){
-                people.emplace_back(std::make_unique<Genome>());
+                people.emplace_back(std::make_unique<Genome>(true));
             }
         }
 

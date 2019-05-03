@@ -198,7 +198,7 @@ void run_statistics(genetic_alg::Population& population) {
 
     cv::Mat frame;
     cv::Rect result;
-    Statistics stat("/media/ksenia/4C62-AB81/vot2017");
+    Statistics stat("/home/ksenia/progas/vot2017");
     double iou = 0;
 
     printf("start to run population\n");
@@ -232,6 +232,8 @@ void run_statistics(genetic_alg::Population& population) {
         }
 
         person->count_fitness();
+
+        person->log_info();
     }
 
     // -----------------------------------------------------------------------------------------
@@ -264,7 +266,6 @@ void run_statistics(genetic_alg::Population& population) {
     // -----------------------------------------------------------------------------------------
 
     printf("start create new population\n");
-
     population.create_new_popuation();
 }
 
