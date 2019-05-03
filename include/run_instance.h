@@ -99,12 +99,7 @@ public:
     }
 
     void bboxes_to_file(const cv::Rect& tr_box, const double iou_value){
-        bboxes_info->push_back(
-//                std::to_string(tr_box.x) + ";" +
-//                std::to_string(tr_box.y) + ";" +
-//                std::to_string(tr_box.width) + ";" +
-//                std::to_string(tr_box.height) + ";" +
-                std::to_string(iou_value));
+        bboxes_info->push_back(std::to_string(iou_value));
     }
 
     void read_all_groundtruth(){
@@ -239,24 +234,25 @@ void run_statistics(genetic_alg::Population& population) {
         person->count_fitness();
     }
 
+    // -----------------------------------------------------------------------------------------
+
+    printf("start selection\n");
+
     double mean_sum = 0;
     double mean_count = population.people.size();
-
     for (auto& person : population.people){
         mean_sum += person->fitness_value;
     }
-
     double mean = mean_sum / mean_count;
-    double variance_delta_sum = 0;
 
+    double variance_delta_sum = 0;
     for (auto& person : population.people){
         variance_delta_sum += (person->fitness_value - mean) * (person->fitness_value - mean);
     }
-
     double variance = variance_delta_sum / (mean_count - 1);
     double standart_derivation = sqrt(variance);
-    double F_i_sum = 0;
 
+    double F_i_sum = 0;
     for (auto& person : population.people){
         F_i_sum += person->count_F_i(standart_derivation, mean);
     }
@@ -264,6 +260,12 @@ void run_statistics(genetic_alg::Population& population) {
     for (auto& person : population.people){
         person->count_probability(F_i_sum);
     }
+
+    // -----------------------------------------------------------------------------------------
+
+    printf("start create new population\n");
+
+    population.create_new_popuation();
 }
 
 
