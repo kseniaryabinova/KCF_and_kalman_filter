@@ -6,13 +6,18 @@
 #include <random>
 #include <memory>
 #include <vector>
+#include <experimental/filesystem>
+#include <fstream>
 
 namespace genetic_alg{
+
+    using namespace std::experimental::filesystem;
 
     const int GENOME_LENGTH = 16 + 4 + 16 + 4 + 16;
 
     std::random_device rd;
     std::mt19937 mt(rd());
+    // TODO fix random
     std::uniform_real_distribution<double> init_rand(0., 1.);
     std::uniform_real_distribution<double> mutate_rand(-1., 1.);
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
@@ -85,6 +90,51 @@ namespace genetic_alg{
             }
         }
 
+        void count_fitness(){
+            double iou_sum = 0;
+            long iou_counter = 0;
+            double current_iou = 0;
+            int first_10_counter = 0;
+
+            long fail_counter = 0;
+
+            std::string str;
+
+            for (auto& file_path: directory_iterator(path_to_bboxes_dir / std::to_string(number))){
+                std::fstream boxes_file(file_path.path().string());
+
+                while (std::getline(boxes_file, str)){
+                    current_iou = std::stod(str);
+
+                    if (current_iou == 0){
+                        ++fail_counter;
+                    } else if (current_iou == 1.){
+                        first_10_counter = 1;
+                    } else if (first_10_counter < 10){
+                        ++first_10_counter;
+                    } else {
+                        ++iou_counter;
+                        iou_sum += current_iou;
+                    }
+                }
+            }
+
+            robustness = fail_counter;
+            accuracy = iou_sum / double(iou_counter);
+            fitness_value = robustness + accuracy;
+        }
+
+        double count_F_i(double standart_derivation, double mean){
+            F_i = 1 + (fitness_value - mean)/(2 * standart_derivation);
+            return F_i;
+        }
+
+        void count_probability(double F_i_sum){
+            p = F_i / F_i_sum;
+        }
+
+        double fitness_value;
+
     private:
 
         double get_random(double low, double high){
@@ -92,12 +142,13 @@ namespace genetic_alg{
         }
 
         int number;
-
         double p;
-        double fitness_value;
+        double F_i;
 
         double robustness;
         double accuracy;
+
+        std::string path_to_bboxes_dir = "/home/ksenia/bboxes_info";
     };
 
     int Genome::counter = 0;

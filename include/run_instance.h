@@ -17,7 +17,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
 #include <bits/unordered_map.h>
-//#include <omp.h>
 
 
 using namespace std::experimental::filesystem;
@@ -52,6 +51,7 @@ public:
             }
         }
 
+        create_directory(path_to_bboxes_dir / prefix);
         make_file_names(dirs->back());
     }
 
@@ -99,15 +99,18 @@ public:
     }
 
     void bboxes_to_file(const cv::Rect& tr_box, const double iou_value){
-        bboxes_info->push_back(std::to_string(tr_box.x) + ";" +
-                               std::to_string(tr_box.y) + ";" +
-                               std::to_string(tr_box.width) + ";" +
-                               std::to_string(tr_box.height) + ";" +
-                               std::to_string(iou_value));
+        bboxes_info->push_back(
+//                std::to_string(tr_box.x) + ";" +
+//                std::to_string(tr_box.y) + ";" +
+//                std::to_string(tr_box.width) + ";" +
+//                std::to_string(tr_box.height) + ";" +
+                std::to_string(iou_value));
     }
 
     void read_all_groundtruth(){
         std::vector<int> f_c;
+        std::string str;
+        std::string substr;
 
         printf("start to read gt files\n");
 
@@ -115,7 +118,6 @@ public:
             printf("%d of %lu\n", i+1, dirs->size());
 
             auto rects = std::vector<cv::Rect>();
-            std::string str;
 
             std::fstream gt_file(dirs->at(i) / "groundtruth.txt");
 
@@ -123,9 +125,7 @@ public:
                 f_c.clear();
                 std::stringstream substr_stream(str);
 
-                while (substr_stream.good()){
-                    std::string substr;
-                    std::getline(substr_stream, substr, ',');
+                while (std::getline(substr_stream, substr, ',')){
                     f_c.push_back(std::stoi(substr));
                 }
 
@@ -150,21 +150,7 @@ public:
         }
     }
 
-    cv::Rect read_init_groundtruth(){
-        if (!gt_index){
-            auto box = groundtruth[dirs->back().filename().string()][gt_index+1];
-            printf("%d %d %d %d\n", box.x, box.y, box.width, box.height);
-            return groundtruth[dirs->back().filename().string()][gt_index++];
-        } else {
-            auto box = groundtruth[dirs->back().filename().string()][0];
-            printf("%d %d %d %d\n", box.x, box.y, box.width, box.height);
-            return groundtruth[dirs->back().filename().string()][gt_index++];
-        }
-    }
-
     cv::Rect read_current_groundtruth(){
-        auto box = groundtruth[dirs->back().filename().string()][gt_index+1];
-        printf("\t%d %d %d %d\n", box.x, box.y, box.width, box.height);
         return groundtruth[dirs->back().filename().string()][gt_index++];
     }
 
@@ -173,8 +159,8 @@ protected:
         if (bboxes_info->empty())
             return;
 
-        std::ofstream file(path_to_bboxes_dir /
-                           (prefix + "_" + dir.filename().string() + ".csv"));
+        std::ofstream file(path_to_bboxes_dir / prefix /
+                           (dir.filename().string() + ".csv"));
 
         std::ostream_iterator<std::string> out_it (file,"\n");
         std::copy ( bboxes_info->begin(), bboxes_info->end(), out_it );
@@ -236,33 +222,47 @@ void run_statistics(genetic_alg::Population& population) {
             frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
 
             if (stat.check_is_new_video() || iou == 0) {
-                cv::Rect coords = stat.read_init_groundtruth();
+                cv::Rect coords = stat.read_current_groundtruth();
                 tracker = std::make_unique<KCFTracker>(true, false, true, false);
                 tracker->init(coords, frame);
 
                 iou = 1;
-
-//                rectangle(frame, cv::Point(coords.x, coords.y),
-//                          cv::Point(coords.x + coords.width, coords.y + coords.height),
-//                          cv::Scalar(0, 255, 0), 4, 8);
-//                kalman = std::make_unique<Kalman>();
             } else {
                 result = tracker->update(frame);
 
                 iou = stat.iou(result, stat.read_current_groundtruth());
-
-//                rectangle(frame, cv::Point(result.x, result.y),
-//                          cv::Point(result.x + result.width, result.y + result.height),
-//                          cv::Scalar(0, 255, 255), 4, 8);
             }
 
             stat.bboxes_to_file(result, iou);
-
-//            imshow("Image", frame);
-//            if (27 == cv::waitKey(0)) {
-//                return;
-//            }
         }
+
+        person->count_fitness();
+    }
+
+    double mean_sum = 0;
+    double mean_count = population.people.size();
+
+    for (auto& person : population.people){
+        mean_sum += person->fitness_value;
+    }
+
+    double mean = mean_sum / mean_count;
+    double variance_delta_sum = 0;
+
+    for (auto& person : population.people){
+        variance_delta_sum += (person->fitness_value - mean) * (person->fitness_value - mean);
+    }
+
+    double variance = variance_delta_sum / (mean_count - 1);
+    double standart_derivation = sqrt(variance);
+    double F_i_sum = 0;
+
+    for (auto& person : population.people){
+        F_i_sum += person->count_F_i(standart_derivation, mean);
+    }
+
+    for (auto& person : population.people){
+        person->count_probability(F_i_sum);
     }
 }
 
