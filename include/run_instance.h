@@ -1,12 +1,10 @@
-#include <memory>
-
-#include <memory>
+#include <utility>
 
 #ifndef TEST_RUN_INSTANCE_H
 #define TEST_RUN_INSTANCE_H
 
-
 #include <string>
+#include <memory>
 #include <vector>
 #include <experimental/filesystem>
 #include <algorithm>
@@ -21,21 +19,62 @@
 
 using namespace std::experimental::filesystem;
 
-class Statistics{
-public:
-    Statistics (const std::string &path_to_dirs) : path_to_dirs(path_to_dirs){
-        dirs = new std::vector<path>();
+std::unordered_map<std::string, std::vector<cv::Rect>> groundtruth;
 
-        for(auto& p : directory_iterator(path_to_dirs)) {
-            if (p.status().type() == file_type::directory) {
-                dirs->push_back(p.path());
-            }
+void read_all_groundtruth(const std::string &path_to_dirs){
+    std::vector<int> f_c;
+    std::string str;
+    std::string substr;
+
+    std::vector<path> dirs;
+    for(auto& p : directory_iterator(path_to_dirs)) {
+        if (p.status().type() == file_type::directory) {
+            dirs.push_back(p.path());
         }
-
-        read_all_groundtruth();
     }
 
-    void init (const int pref){
+    printf("start to read gt files\n");
+
+    for (int i=0; i<dirs.size(); ++i){
+        printf("%d of %lu\n", i+1, dirs.size());
+
+        auto rects = std::vector<cv::Rect>();
+
+        std::fstream gt_file(dirs[i] / "groundtruth.txt");
+
+        while (std::getline(gt_file, str)){
+            f_c.clear();
+            std::stringstream substr_stream(str);
+
+            while (std::getline(substr_stream, substr, ',')){
+                f_c.push_back(std::stoi(substr));
+            }
+
+            cv::Rect box;
+
+            if (f_c.size() > 4){
+                box.x = int(fmin(f_c[0], fmin(f_c[2], fmin(f_c[4], f_c[6]))));
+                box.y = int(fmin(f_c[1], fmin(f_c[3], fmin(f_c[5], f_c[7]))));
+                box.width = int(fmax(f_c[0], fmax(f_c[2], fmax(f_c[4], f_c[6])))) - box.x;
+                box.height = int(fmax(f_c[1], fmax(f_c[3], fmax(f_c[5], f_c[7])))) - box.y;
+            } else {
+                box.x = int(f_c[0]);
+                box.y = int(f_c[1]);
+                box.width = int(f_c[2]);
+                box.height = int(f_c[3]);
+            }
+
+            rects.push_back(box);
+        }
+
+        groundtruth[dirs[i].filename().string()] = rects;
+    }
+}
+
+class Statistics{
+public:
+    Statistics (std::string path_to_dirs, const int pref) : path_to_dirs(std::move(path_to_dirs)){
+        dirs = new std::vector<path>();
         bboxes_info = new std::vector<std::string>();
         file_names = new std::vector<path>();
         dirs = new std::vector<path>();
@@ -44,7 +83,7 @@ public:
         gt_index = 0;
 
         if (dirs->empty()){
-            for(auto& p : directory_iterator(path_to_dirs)) {
+            for(auto& p : directory_iterator(this->path_to_dirs)) {
                 if (p.status().type() == file_type::directory) {
                     dirs->push_back(p.path());
                 }
@@ -102,49 +141,6 @@ public:
         bboxes_info->push_back(std::to_string(iou_value));
     }
 
-    void read_all_groundtruth(){
-        std::vector<int> f_c;
-        std::string str;
-        std::string substr;
-
-        printf("start to read gt files\n");
-
-        for (int i=0; i<dirs->size(); ++i){
-            printf("%d of %lu\n", i+1, dirs->size());
-
-            auto rects = std::vector<cv::Rect>();
-
-            std::fstream gt_file(dirs->at(i) / "groundtruth.txt");
-
-            while (std::getline(gt_file, str)){
-                f_c.clear();
-                std::stringstream substr_stream(str);
-
-                while (std::getline(substr_stream, substr, ',')){
-                    f_c.push_back(std::stoi(substr));
-                }
-
-                cv::Rect box;
-
-                if (f_c.size() > 4){
-                    box.x = int(fmin(f_c[0], fmin(f_c[2], fmin(f_c[4], f_c[6]))));
-                    box.y = int(fmin(f_c[1], fmin(f_c[3], fmin(f_c[5], f_c[7]))));
-                    box.width = int(fmax(f_c[0], fmax(f_c[2], fmax(f_c[4], f_c[6])))) - box.x;
-                    box.height = int(fmax(f_c[1], fmax(f_c[3], fmax(f_c[5], f_c[7])))) - box.y;
-                } else {
-                    box.x = int(f_c[0]);
-                    box.y = int(f_c[1]);
-                    box.width = int(f_c[2]);
-                    box.height = int(f_c[3]);
-                }
-
-                rects.push_back(box);
-            }
-
-            groundtruth[dirs->at(i).filename().string()] = rects;
-        }
-    }
-
     cv::Rect read_current_groundtruth(){
         return groundtruth[dirs->back().filename().string()][gt_index++];
     }
@@ -177,11 +173,10 @@ protected:
     }
 
 private:
-    std::unordered_map<std::string, std::vector<cv::Rect>> groundtruth;
     int gt_index;
 
     bool is_new_video;
-    std::string path_to_bboxes_dir = "/home/ksenia/bboxes_info";
+    std::string path_to_bboxes_dir = "../bboxes_info";
     std::string prefix;
     std::vector<std::string>* bboxes_info;
     std::vector<path>* file_names;
@@ -193,21 +188,30 @@ private:
 #include "genetic_algorithm.h"
 #include "kcftracker.hpp"
 #include "kalman_filter.h"
+#include <chrono>
+#include <omp.h>
+
+using namespace std::chrono;
+typedef steady_clock timestamp;
+
 
 void run_statistics(genetic_alg::Population& population) {
-
-    cv::Mat frame;
-    cv::Rect result;
-    Statistics stat("/home/ksenia/progas/vot2017");
-    double iou = 0;
+    read_all_groundtruth("../vot2017");
 
     printf("start to run population\n");
 
-    for (auto &person : population.people) {
+#pragma omp parallel for
+    for (int i=0; i<population.people.size(); ++i){
+        cv::Mat frame;
+        cv::Rect result;
+        double iou = 0;
+        auto T = timestamp::now();
 
-        printf("%d of %d\n", person->get_number(), person->counter);
+        printf("%d of %d\n",
+                population.people[i]->get_number(),
+                population.people[i]->counter);
 
-        stat.init(person->get_number());
+        Statistics stat("../vot2017", population.people[i]->get_number());
         std::unique_ptr<KCFTracker> tracker;
         std::unique_ptr<Kalman> kalman;
 
@@ -217,13 +221,19 @@ void run_statistics(genetic_alg::Population& population) {
             frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
 
             if (stat.check_is_new_video() || iou == 0) {
-                cv::Rect coords = stat.read_current_groundtruth();
                 tracker = std::make_unique<KCFTracker>(true, false, true, false);
-                tracker->init(coords, frame);
+                tracker->init(stat.read_current_groundtruth(), frame);
+
+//                kalman = std::make_unique<Kalman>();
+//                kalman->set_from_genome(person->data);
 
                 iou = 1;
             } else {
+                T = timestamp::now();
                 result = tracker->update(frame);
+//                result = kalman->predict(
+//                        duration_cast<milliseconds>(timestamp::now() - T).count(),
+//                        result);
 
                 iou = stat.iou(result, stat.read_current_groundtruth());
             }
@@ -231,9 +241,8 @@ void run_statistics(genetic_alg::Population& population) {
             stat.bboxes_to_file(result, iou);
         }
 
-        person->count_fitness();
-
-        person->log_info();
+        population.people[i]->count_fitness();
+        population.people[i]->log_info();
     }
 
     // -----------------------------------------------------------------------------------------

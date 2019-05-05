@@ -15,7 +15,7 @@ namespace genetic_alg{
 
     const int GENOME_LENGTH = 16 + 4 + 16 + 4 + 16;
 
-    std::fstream log_file("/home/ksenia/progas/log.log", std::fstream::out | std::fstream::trunc);
+    std::fstream log_file("../log.log", std::fstream::out | std::fstream::trunc);
 
     std::random_device rd;
     std::mt19937 mt(rd());
@@ -158,7 +158,7 @@ namespace genetic_alg{
 
         double F_i;
 
-        std::string path_to_bboxes_dir = "/home/ksenia/bboxes_info";
+        std::string path_to_bboxes_dir = "../bboxes_info";
     };
 
     int Genome::counter = 0;
@@ -173,7 +173,7 @@ namespace genetic_alg{
     class Population{
     public:
         Population() {
-            log_file.precision(5);
+            log_file.precision(8);
             std::srand ((unsigned int)(time(nullptr) / 2));
 
             for (int i=0; i<START_AMOUNT; ++i){
