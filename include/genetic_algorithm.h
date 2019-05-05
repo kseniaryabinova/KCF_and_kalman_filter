@@ -15,7 +15,8 @@ namespace genetic_alg{
 
     const int GENOME_LENGTH = 16 + 4 + 16 + 4 + 16;
 
-    std::fstream log_file("../log.log", std::fstream::out | std::fstream::trunc);
+    std::fstream fitness_log_file("../fitness.log", std::fstream::out | std::fstream::trunc);
+    std::fstream genome_log_file("../genome.log", std::fstream::out | std::fstream::trunc);
 
     std::random_device rd;
     std::mt19937 mt(rd());
@@ -122,7 +123,7 @@ namespace genetic_alg{
             }
 
             robustness = fail_counter;
-            accuracy = iou_sum / double(iou_counter);
+            accuracy = iou_sum / double(iou_counter) * 100;
             fitness_value = robustness + accuracy;
         }
 
@@ -136,13 +137,19 @@ namespace genetic_alg{
         }
 
         void log_info(){
-            log_file << "person #" << this->get_number() <<
+            fitness_log_file << "person #" << this->get_number() <<
                         " acc=" << this->accuracy <<
                         " rob=" << this->robustness <<
                         " fit=" << this->fitness_value <<
                         " p=" << this->p << std::endl;
+            fitness_log_file.flush();
 
-            log_file.flush();
+            genome_log_file << "person #" << this->get_number() << std::endl;
+            for (int i=0; i<GENOME_LENGTH; ++i){
+                genome_log_file << this->data[i] << " ";
+            }
+            genome_log_file << std::endl;
+            genome_log_file.flush();
 
             printf("\t---- info has been logged ----\n");
         }
@@ -158,7 +165,7 @@ namespace genetic_alg{
 
         double F_i;
 
-        std::string path_to_bboxes_dir = "..stat/bboxes_info";
+        std::string path_to_bboxes_dir = "../bboxes_info";
     };
 
     int Genome::counter = 0;
@@ -173,7 +180,7 @@ namespace genetic_alg{
     class Population{
     public:
         Population() {
-            log_file.precision(8);
+            fitness_log_file.precision(8);
             std::srand ((unsigned int)(time(nullptr) / 2));
 
             for (int i=0; i<START_AMOUNT; ++i){
@@ -234,6 +241,9 @@ namespace genetic_alg{
             }
 
             people = std::move(new_population);
+
+            fitness_log_file << "\n NEW POPULATION SIZE = " << people.size() << "\n";
+            fitness_log_file.flush();
         }
 
         People people;
