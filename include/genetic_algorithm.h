@@ -158,7 +158,7 @@ namespace genetic_alg{
 
         double F_i;
 
-        std::string path_to_bboxes_dir = "../bboxes_info";
+        std::string path_to_bboxes_dir = "..stat/bboxes_info";
     };
 
     int Genome::counter = 0;

@@ -31,18 +31,14 @@ public:
 
         is_first = true;
 
-//        dummy_init_matrices();
+        dummy_init_matrices();
     }
 
     void set_from_genome(const double* gene){
-        std::memcpy(B.data, gene, 16 * sizeof(double));
-        printf("1\n");
-        std::memcpy(u.data, gene + 16, 4 * sizeof(double));
-        printf("2\n");
-        std::memcpy(S.data, gene + 16 + 4, 16 * sizeof(double));
-        printf("3\n");
-        std::memcpy(R.data, gene + 16 + 4 + 16, 4 * sizeof(double));
-        printf("4\n");
+        this->B.data = (unsigned char*)gene;
+        this->u.data = (unsigned char*)(gene + 16);
+        this->S.data = (unsigned char*)(gene + 16 + 4);
+        this->R.data = (unsigned char*)(gene + 16 + 4 + 16);
     }
 
     void set_A(double T){

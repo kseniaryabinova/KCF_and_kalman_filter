@@ -197,10 +197,10 @@ typedef steady_clock timestamp;
 
 void run_statistics(genetic_alg::Population& population) {
     read_all_groundtruth("../vot2017");
-
+    bool show = false;
     printf("start to run population\n");
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int i=0; i<population.people.size(); ++i){
         cv::Mat frame;
         cv::Rect result;
@@ -221,24 +221,49 @@ void run_statistics(genetic_alg::Population& population) {
             frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
 
             if (stat.check_is_new_video() || iou == 0) {
+                auto coords = stat.read_current_groundtruth();
                 tracker = std::make_unique<KCFTracker>(true, false, true, false);
-                tracker->init(stat.read_current_groundtruth(), frame);
+                tracker->init(coords, frame);
 
-//                kalman = std::make_unique<Kalman>();
-//                kalman->set_from_genome(person->data);
+                kalman = std::make_unique<Kalman>();
+                kalman->set_from_genome(population.people[i]->data);
+
+                if (show)
+                    rectangle(frame, cv::Point(coords.x, coords.y),
+                            cv::Point(coords.x + coords.width, coords.y + coords.height),
+                            cv::Scalar(0, 255, 0), 4, 8);
+
 
                 iou = 1;
             } else {
                 T = timestamp::now();
                 result = tracker->update(frame);
-//                result = kalman->predict(
-//                        duration_cast<milliseconds>(timestamp::now() - T).count(),
-//                        result);
+
+                if (show)
+                    rectangle(frame, cv::Point(result.x, result.y),
+                              cv::Point(result.x + result.width, result.y + result.height),
+                              cv::Scalar(0, 255, 255), 4, 8);
+
+                result = kalman->predict(
+                        double(duration_cast<milliseconds>(timestamp::now() - T).count()) / 1000.,
+                        result);
+
+                if (show)
+                    rectangle(frame, cv::Point(result.x, result.y),
+                              cv::Point(result.x + result.width, result.y + result.height),
+                              cv::Scalar(255, 0, 255), 4, 8);
 
                 iou = stat.iou(result, stat.read_current_groundtruth());
             }
 
             stat.bboxes_to_file(result, iou);
+
+            if (show){
+                imshow("Image", frame);
+                if (27 == cv::waitKey(3)) {
+                    return;
+                }
+            }
         }
 
         population.people[i]->count_fitness();
@@ -250,17 +275,16 @@ void run_statistics(genetic_alg::Population& population) {
     printf("start selection\n");
 
     double mean_sum = 0;
-    double mean_count = population.people.size();
     for (auto& person : population.people){
         mean_sum += person->fitness_value;
     }
-    double mean = mean_sum / mean_count;
+    double mean = mean_sum / population.people.size();
 
     double variance_delta_sum = 0;
     for (auto& person : population.people){
         variance_delta_sum += (person->fitness_value - mean) * (person->fitness_value - mean);
     }
-    double variance = variance_delta_sum / (mean_count - 1);
+    double variance = variance_delta_sum / (population.people.size() - 1);
     double standart_derivation = sqrt(variance);
 
     double F_i_sum = 0;
