@@ -1,0 +1,5 @@
+.idea
+cmake-build-debug
+vot2017
+bboxes_info
+*log
