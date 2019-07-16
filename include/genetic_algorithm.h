@@ -8,6 +8,7 @@
 #include <vector>
 #include <experimental/filesystem>
 #include <fstream>
+#include <algorithm>
 
 namespace genetic_alg{
 
@@ -34,7 +35,7 @@ namespace genetic_alg{
         double data[GENOME_LENGTH]{};
 
         Genome(bool is_random = false) {
-            mt.seed(time(nullptr));
+//            mt.seed(time(nullptr));
 
             number = ++counter;
 
@@ -47,6 +48,10 @@ namespace genetic_alg{
 
         int get_number(){
             return number;
+        }
+
+        bool operator< (const Genome& that){
+            return this->p < that.p;
         }
 
         children make_kids_with(const std::shared_ptr <Genome> &that) {
@@ -129,7 +134,7 @@ namespace genetic_alg{
             } else {
                 accuracy = iou_sum / double(iou_counter) * 100;
             }
-            fitness_value = robustness + accuracy;
+            fitness_value = robustness + accuracy * 10000;
         }
 
         double count_F_i(double standart_derivation, double mean){
@@ -177,7 +182,7 @@ namespace genetic_alg{
 
 
 
-    const int START_AMOUNT = 100;
+    const int MIN_AMOUNT = 100;
     const int MAX_AMOUNT = 120;
 
     typedef std::vector<std::shared_ptr<Genome>> People;
@@ -188,7 +193,7 @@ namespace genetic_alg{
             fitness_log_file.precision(8);
             std::srand ((unsigned int)(time(nullptr) / 2));
 
-            for (int i=0; i<START_AMOUNT; ++i){
+            for (int i=0; i<MIN_AMOUNT; ++i){
                 people.emplace_back(std::make_unique<Genome>(true));
             }
         }
@@ -212,14 +217,19 @@ namespace genetic_alg{
         }
 
         void create_new_popuation(){
+            //get potential partners
             double mean = 1. / people.size();
             People people_after_selection;
+            People thresholded_people;
             for (auto& person : people){
-                if (person->p >= get_random(0, mean)){
+                if (person->p >= get_random(0, mean * 2)){
                     people_after_selection.push_back(person);
+                } else {
+                    thresholded_people.push_back(person);
                 }
             }
 
+            // make some kids
             People new_population;
             for (auto& person : people_after_selection){
                 auto two_children = person->make_kids_with(find_partner(person));
@@ -227,22 +237,35 @@ namespace genetic_alg{
                 new_population.emplace_back(std::move(two_children.second));
             }
 
+            // delete redundant people
             if (new_population.size() > MAX_AMOUNT){
                 auto delta = double(new_population.size() - MAX_AMOUNT);
-                double threshold = double(MAX_AMOUNT) - delta / double(MAX_AMOUNT);
+                double threshold = delta / double(MAX_AMOUNT);
 
                 People people_to_remove;
                 for(auto& person : new_population){
-                    people_to_remove.emplace_back(std::move(person));
+                    if (get_random(0, 1) < threshold){
+                        people_to_remove.emplace_back(std::move(person));
+                    }
                 }
                 people_to_remove.clear();
             }
 
+            // add some mutations
             double threshold = 0.2;
             for (auto& person : new_population){
                 if (get_random(0, 1) <= threshold){
                     person->mutate();
                 }
+            }
+
+            // sort thresholded people according to their prob
+            std::sort(thresholded_people.begin(), thresholded_people.end());
+
+            // if the population is to small, enhance it
+            for (int i=0; i<MIN_AMOUNT - new_population.size(); ++i){
+                thresholded_people[0]->mutate();
+                new_population.emplace_back(std::move(thresholded_people[i]));
             }
 
             people = std::move(new_population);
