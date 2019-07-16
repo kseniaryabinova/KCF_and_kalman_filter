@@ -34,11 +34,25 @@ public:
         dummy_init_matrices();
     }
 
+    ~Kalman(){
+        this->X.release();
+        this->A.release();
+        this->B.release();
+        this->u.release();
+        this->S.release();
+        this->Q.release();
+        this->K.release();
+        this->H.release();
+        this->R.release();
+        this->I.release();
+    }
+
     void set_from_genome(const double* gene){
         this->B.data = (unsigned char*)gene;
         this->u.data = (unsigned char*)(gene + 16);
         this->S.data = (unsigned char*)(gene + 16 + 4);
         this->R.data = (unsigned char*)(gene + 16 + 4 + 16);
+        this->A.data = (unsigned char*)(gene + 16 + 4 + 16 + 4);
     }
 
     void set_A(double T){
@@ -60,13 +74,6 @@ public:
                 (0.5 * T * T * T), 0, (T * T), 0,
                 0, (0.5 * T * T * T), 0, (T * T)
         };
-
-//        double data[] = {
-//                1, 0, 0, 0,
-//                0, 1, 0, 0,
-//                0, 0, 1, 0,
-//                0, 0, 0, 1
-//        };
 
         this->Q.release();
         this->Q = cv::Mat(4, 4, CV_64F, data);

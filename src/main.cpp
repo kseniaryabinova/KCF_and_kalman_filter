@@ -3,7 +3,11 @@
 
 
 int main(){
+    read_all_groundtruth("../vot2017");
     genetic_alg::Population population;
-    run_statistics(population);
+
+    for (int i=0; i<3; ++i){
+        run_statistics(population);
+    }
     return 0;
 }

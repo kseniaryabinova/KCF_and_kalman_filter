@@ -31,8 +31,11 @@ namespace genetic_alg{
         typedef std::pair<std::shared_ptr<Genome>, std::shared_ptr<Genome>> children;
 
         static int counter;
+        double data[GENOME_LENGTH]{};
 
         Genome(bool is_random = false) {
+            mt.seed(time(nullptr));
+
             number = ++counter;
 
             if (is_random){
@@ -46,7 +49,7 @@ namespace genetic_alg{
             return number;
         }
 
-        children sex_with (const std::shared_ptr<Genome>& that){
+        children make_kids_with(const std::shared_ptr <Genome> &that) {
             int positions[4] = {0, crossingover_dist_lo(mt),
                                 crossingover_dist_hi(mt), GENOME_LENGTH};
 
@@ -54,14 +57,14 @@ namespace genetic_alg{
             auto child_2 = std::make_unique<Genome>();
 
             // crossingover in 2 places
-            for (int i=0; i<3; ++i){
-                if (init_rand(mt) > 0.5){
-                    for (int j=positions[i]; j<positions[i+1]; ++j){
+            for (int i = 0; i < 3; ++i) {
+                if (init_rand(mt) > 0.5) {
+                    for (int j = positions[i]; j < positions[i + 1]; ++j) {
                         child_1->data[j] = this->data[j];
                         child_2->data[j] = that->data[j];
                     }
                 } else {
-                    for (int j=positions[i]; j<positions[i+1]; ++j){
+                    for (int j = positions[i]; j < positions[i + 1]; ++j) {
                         child_1->data[j] = that->data[j];
                         child_2->data[j] = this->data[j];
                     }
@@ -70,8 +73,6 @@ namespace genetic_alg{
 
             return children(std::move(child_1), std::move(child_2));
         }
-
-        double data[GENOME_LENGTH];
 
         double get_distance(const Genome& that){
             double distance = 0;
@@ -123,7 +124,11 @@ namespace genetic_alg{
             }
 
             robustness = fail_counter;
-            accuracy = iou_sum / double(iou_counter) * 100;
+            if (iou_counter == 0){
+                accuracy = 0;
+            } else {
+                accuracy = iou_sum / double(iou_counter) * 100;
+            }
             fitness_value = robustness + accuracy;
         }
 
@@ -154,16 +159,16 @@ namespace genetic_alg{
             printf("\t---- info has been logged ----\n");
         }
 
-        double fitness_value;
-        double p;
+        double fitness_value = -1;
+        double p = -1;
 
-        double robustness;
-        double accuracy;
+        double robustness = -1;
+        double accuracy = -1;
 
     private:
         int number;
 
-        double F_i;
+        double F_i = -1;
 
         std::string path_to_bboxes_dir = "../bboxes_info";
     };
@@ -190,34 +195,34 @@ namespace genetic_alg{
 
         std::shared_ptr<Genome> find_partner(const std::shared_ptr<Genome> &person) {
             int index = 0;
-            double min_distance = 1'000'000'000;
+            double max_distance = 0;
 
             for (int i = 0; i < people.size(); ++i) {
                 if (person->get_number() != people[i]->get_number()){
                     double distance = people[i].get()->get_distance(person.get());
 
-                    if (min_distance > distance) {
-                        min_distance = distance;
+                    if (max_distance < distance) {
+                        max_distance = distance;
                         index = i;
                     }
                 }
             }
 
-            return std::move(people[index]);
+            return people[index];
         }
 
         void create_new_popuation(){
             double mean = 1. / people.size();
             People people_after_selection;
             for (auto& person : people){
-                if (person->p >= get_random(0, mean * 3)){
+                if (person->p >= get_random(0, mean)){
                     people_after_selection.push_back(person);
                 }
             }
 
             People new_population;
             for (auto& person : people_after_selection){
-                auto two_children = person->sex_with(find_partner(person));
+                auto two_children = person->make_kids_with(find_partner(person));
                 new_population.emplace_back(std::move(two_children.first));
                 new_population.emplace_back(std::move(two_children.second));
             }

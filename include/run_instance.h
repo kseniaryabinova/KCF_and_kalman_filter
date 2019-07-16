@@ -196,11 +196,10 @@ typedef steady_clock timestamp;
 
 
 void run_statistics(genetic_alg::Population& population) {
-    read_all_groundtruth("../vot2017");
     bool show = false;
     printf("start to run population\n");
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (int i=0; i<population.people.size(); ++i){
         cv::Mat frame;
         cv::Rect result;
@@ -245,7 +244,7 @@ void run_statistics(genetic_alg::Population& population) {
                               cv::Scalar(0, 255, 255), 4, 8);
 
                 result = kalman->predict(
-                        double(duration_cast<milliseconds>(timestamp::now() - T).count()) / 1000.,
+                        double(duration_cast<microseconds>(timestamp::now() - T).count()) / 1000'000.,
                         result);
 
                 if (show)
@@ -260,19 +259,20 @@ void run_statistics(genetic_alg::Population& population) {
 
             if (show){
                 imshow("Image", frame);
-                if (27 == cv::waitKey(3)) {
-                    return;
-                }
+//                if (27 == cv::waitKey(3)) {
+//                    return;
+//                }
             }
         }
-
-        population.people[i]->count_fitness();
-        population.people[i]->log_info();
     }
 
     // -----------------------------------------------------------------------------------------
 
     printf("start selection\n");
+
+    for (auto& person : population.people){
+        person->count_fitness();
+    }
 
     double mean_sum = 0;
     for (auto& person : population.people){
@@ -294,6 +294,7 @@ void run_statistics(genetic_alg::Population& population) {
 
     for (auto& person : population.people){
         person->count_probability(F_i_sum);
+        person->log_info();
     }
 
     // -----------------------------------------------------------------------------------------
