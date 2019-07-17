@@ -32,16 +32,14 @@ namespace genetic_alg{
         typedef std::pair<std::shared_ptr<Genome>, std::shared_ptr<Genome>> children;
 
         static int counter;
-        double data[GENOME_LENGTH]{};
+        double data[GENOME_LENGTH];
 
         Genome(bool is_random = false) {
-//            mt.seed(time(nullptr));
-
             number = ++counter;
 
             if (is_random){
-                for (double &i : data) {
-                    i = init_rand(mt);
+                for (int i=0; i<GENOME_LENGTH; ++i) {
+                    this->data[i] = init_rand(mt);
                 }
             }
         }
@@ -79,11 +77,11 @@ namespace genetic_alg{
             return children(std::move(child_1), std::move(child_2));
         }
 
-        double get_distance(const Genome& that){
+        double get_distance(const std::shared_ptr<Genome>& that){
             double distance = 0;
 
             for (int i=0; i<GENOME_LENGTH; ++i){
-                distance += (this->data[i] = that.data[i]) * (this->data[i] = that.data[i]);
+                distance += (this->data[i] = that->data[i]) * (this->data[i] = that->data[i]);
             }
 
             return sqrt(distance);
@@ -182,8 +180,8 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 100;
-    const int MAX_AMOUNT = 120;
+    const int MIN_AMOUNT = 30;
+    const int MAX_AMOUNT = 40;
 
     typedef std::vector<std::shared_ptr<Genome>> People;
 
@@ -204,7 +202,7 @@ namespace genetic_alg{
 
             for (int i = 0; i < people.size(); ++i) {
                 if (person->get_number() != people[i]->get_number()){
-                    double distance = people[i].get()->get_distance(person.get());
+                    double distance = people[i].get()->get_distance(person);
 
                     if (max_distance < distance) {
                         max_distance = distance;
@@ -217,7 +215,7 @@ namespace genetic_alg{
         }
 
         void create_new_popuation(){
-            //get potential partners
+            printf("get potential partners\n");
             double mean = 1. / people.size();
             People people_after_selection;
             People thresholded_people;
@@ -229,7 +227,7 @@ namespace genetic_alg{
                 }
             }
 
-            // make some kids
+            printf("make some kids\n");
             People new_population;
             for (auto& person : people_after_selection){
                 auto two_children = person->make_kids_with(find_partner(person));
@@ -237,7 +235,7 @@ namespace genetic_alg{
                 new_population.emplace_back(std::move(two_children.second));
             }
 
-            // delete redundant people
+            printf("delete redundant people\n");
             if (new_population.size() > MAX_AMOUNT){
                 auto delta = double(new_population.size() - MAX_AMOUNT);
                 double threshold = delta / double(MAX_AMOUNT);
@@ -251,7 +249,7 @@ namespace genetic_alg{
                 people_to_remove.clear();
             }
 
-            // add some mutations
+            printf("add some mutations\n");
             double threshold = 0.2;
             for (auto& person : new_population){
                 if (get_random(0, 1) <= threshold){
@@ -259,12 +257,13 @@ namespace genetic_alg{
                 }
             }
 
-            // sort thresholded people according to their prob
-            std::sort(thresholded_people.begin(), thresholded_people.end());
+            printf("sort thresholded people according to their prob in descending manner\n");
+            std::stable_sort(thresholded_people.begin(), thresholded_people.end());
+            std::reverse(thresholded_people.begin(), thresholded_people.end());
 
-            // if the population is to small, enhance it
+            printf("if the population is to small, enhance it\n");
             for (int i=0; i<MIN_AMOUNT - new_population.size(); ++i){
-                thresholded_people[0]->mutate();
+                thresholded_people[i]->mutate();
                 new_population.emplace_back(std::move(thresholded_people[i]));
             }
 
