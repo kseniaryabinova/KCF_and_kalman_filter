@@ -41,6 +41,10 @@ namespace genetic_alg{
                 for (int i=0; i<GENOME_LENGTH; ++i) {
                     this->data[i] = init_rand(mt);
                 }
+            } else {
+                for (int i=0; i<GENOME_LENGTH; ++i) {
+                    this->data[i] = 0;
+                }
             }
         }
 
@@ -183,7 +187,7 @@ namespace genetic_alg{
     const int MIN_AMOUNT = 30;
     const int MAX_AMOUNT = 40;
 
-    typedef std::vector<std::shared_ptr<Genome>> People;
+    using People = std::vector<std::shared_ptr<Genome>>;
 
     class Population{
     public:
@@ -240,13 +244,11 @@ namespace genetic_alg{
                 auto delta = double(new_population.size() - MAX_AMOUNT);
                 double threshold = delta / double(MAX_AMOUNT);
 
-                People people_to_remove;
-                for(auto& person : new_population){
+                for(int i=0; i<new_population.size(); i++){
                     if (get_random(0, 1) < threshold){
-                        people_to_remove.emplace_back(std::move(person));
+                        new_population.erase(new_population.size() + new_population.begin());
                     }
                 }
-                people_to_remove.clear();
             }
 
             printf("add some mutations\n");
@@ -261,10 +263,13 @@ namespace genetic_alg{
             std::stable_sort(thresholded_people.begin(), thresholded_people.end());
             std::reverse(thresholded_people.begin(), thresholded_people.end());
 
-            printf("if the population is to small, enhance it\n");
-            for (int i=0; i<MIN_AMOUNT - new_population.size(); ++i){
-                thresholded_people[i]->mutate();
-                new_population.emplace_back(std::move(thresholded_people[i]));
+            printf("if the population is too small, enhance it\n");
+            if (MIN_AMOUNT > new_population.size()){
+                auto limit = MIN_AMOUNT - new_population.size();
+                for (int i=0; i<limit; ++i){
+                    thresholded_people[i]->mutate();
+                    new_population.emplace_back(std::move(thresholded_people[i]));
+                }
             }
 
             people = std::move(new_population);
