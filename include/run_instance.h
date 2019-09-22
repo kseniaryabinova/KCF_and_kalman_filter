@@ -199,16 +199,16 @@ void run_statistics(genetic_alg::Population& population) {
     bool show = false;
     printf("start to run population\n");
 
-#pragma omp parallel for
-    for (int i=0; i<population.people.size(); ++i){
+//#pragma omp parallel for
+    for (int i= 0; i<population.people.size(); ++i){
         cv::Mat frame;
         cv::Rect result;
         double iou = 0;
         auto T = timestamp::now();
 
-        printf("%d of %d\n",
+        printf("%d of %zu\n",
                 population.people[i]->get_number(),
-                population.people[i]->counter);
+                population.people.size());
 
         Statistics stat("../vot2017", population.people[i]->get_number());
         std::unique_ptr<KCFTracker> tracker;
@@ -225,7 +225,12 @@ void run_statistics(genetic_alg::Population& population) {
                 tracker->init(coords, frame);
 
                 kalman = std::make_unique<Kalman>();
+                printf("\nperson #%d: ", population.people[i]->get_number());
+                for (int j=0; j<genetic_alg::GENOME_LENGTH; ++j){
+                    printf("[%d]=%f ", j, population.people[i]->data[j]);
+                }
                 kalman->set_from_genome(population.people[i]->data);
+
 
                 if (show)
                     rectangle(frame, cv::Point(coords.x, coords.y),

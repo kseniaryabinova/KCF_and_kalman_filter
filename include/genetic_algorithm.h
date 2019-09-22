@@ -26,15 +26,23 @@ namespace genetic_alg{
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
     std::uniform_int_distribution<int> crossingover_dist_hi(GENOME_LENGTH / 2 + 1, GENOME_LENGTH - 1);
 
+    static const int MAX_ROBUSTNESS = 20'000;
+
     class Genome{
     public:
 
         typedef std::pair<std::shared_ptr<Genome>, std::shared_ptr<Genome>> children;
 
         static int counter;
-        double data[GENOME_LENGTH];
+        double* data;
+
+        ~Genome(){
+            delete[] this->data;
+        }
 
         Genome(bool is_random = false) {
+            this->data = new double[GENOME_LENGTH];
+
             number = ++counter;
 
             if (is_random){
@@ -94,9 +102,9 @@ namespace genetic_alg{
         void mutate(){
             double threshold = init_rand(mt);
 
-            for (double &i : this->data) {
+            for (int i=0; i<GENOME_LENGTH; ++i) {
                 if (init_rand(mt) > threshold){
-                    i += mutate_rand(mt);
+                    this->data[i] += mutate_rand(mt);
                 }
             }
         }
@@ -136,7 +144,7 @@ namespace genetic_alg{
             } else {
                 accuracy = iou_sum / double(iou_counter) * 100;
             }
-            fitness_value = robustness + accuracy * 10000;
+            fitness_value = (MAX_ROBUSTNESS - robustness) + accuracy * 10000;
         }
 
         double count_F_i(double standart_derivation, double mean){
@@ -184,10 +192,11 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 30;
-    const int MAX_AMOUNT = 40;
+    const int MIN_AMOUNT = 10;
+    const int MAX_AMOUNT = 20;
 
     using People = std::vector<std::shared_ptr<Genome>>;
+
 
     class Population{
     public:
