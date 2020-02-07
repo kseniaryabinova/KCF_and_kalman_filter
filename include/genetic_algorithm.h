@@ -21,8 +21,8 @@ namespace genetic_alg{
 
     std::random_device rd;
     std::mt19937 mt(rd());
-    std::uniform_real_distribution<double> init_rand(0., 1.);
-    std::uniform_real_distribution<double> mutate_rand(-1., 1.);
+    std::uniform_real_distribution<float> init_rand(0., 1.);
+    std::uniform_real_distribution<float> mutate_rand(-1., 1.);
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
     std::uniform_int_distribution<int> crossingover_dist_hi(GENOME_LENGTH / 2 + 1, GENOME_LENGTH - 1);
 
@@ -34,14 +34,14 @@ namespace genetic_alg{
         typedef std::pair<std::shared_ptr<Genome>, std::shared_ptr<Genome>> children;
 
         static int counter;
-        double* data;
+        float* data;
 
         ~Genome(){
             delete[] this->data;
         }
 
         Genome(bool is_random = false) {
-            this->data = new double[GENOME_LENGTH];
+            this->data = new float[GENOME_LENGTH];
 
             number = ++counter;
 
@@ -291,7 +291,7 @@ namespace genetic_alg{
 
     private:
 
-        double get_random(double low, double high){
+        float get_random(float low, float high){
             return init_rand(mt) * (high - low) + low;
         }
     };

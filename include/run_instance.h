@@ -101,11 +101,7 @@ public:
         double x2 = std::min(box1.x + box1.width,  box2.x + box2.width);
         double y2 = std::min(box1.y + box1.height, box2.y + box2.height);
 
-        if (x1 >= x2 || y1 >= y2){
-            return 0;
-        }
-
-        double intersection = (x2 - x1) * (y2 - y1);
+        double intersection = std::max(x2 - x1, 0.) * std::max(y2 - y1, 0.);
         double union_ = box1.width * box1.height + box2.width * box2.height - intersection;
 
         return intersection / union_;
@@ -225,12 +221,11 @@ void run_statistics(genetic_alg::Population& population) {
                 tracker->init(coords, frame);
 
                 kalman = std::make_unique<Kalman>();
-                printf("\nperson #%d: ", population.people[i]->get_number());
-                for (int j=0; j<genetic_alg::GENOME_LENGTH; ++j){
-                    printf("[%d]=%f ", j, population.people[i]->data[j]);
-                }
+//                printf("\nperson #%d: ", population.people[i]->get_number());
+//                for (int j=0; j<genetic_alg::GENOME_LENGTH; ++j){
+//                    printf("[%d]=%f ", j, population.people[i]->data[j]);
+//                }
                 kalman->set_from_genome(population.people[i]->data);
-
 
                 if (show)
                     rectangle(frame, cv::Point(coords.x, coords.y),
