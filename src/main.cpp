@@ -6,7 +6,7 @@ int main(){
     read_all_groundtruth("../vot2017");
     genetic_alg::Population population;
 
-    for (int i=0; i<1; ++i){
+    for (int i=0; i<10; ++i){
         run_statistics(population);
     }
     return 0;

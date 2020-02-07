@@ -138,13 +138,13 @@ namespace genetic_alg{
                 }
             }
 
-            robustness = fail_counter;
+            robustness = MAX_ROBUSTNESS - fail_counter;
             if (iou_counter == 0){
                 accuracy = 0;
             } else {
                 accuracy = iou_sum / double(iou_counter) * 100;
             }
-            fitness_value = (MAX_ROBUSTNESS - robustness) + accuracy * 10000;
+            fitness_value = robustness + accuracy * 10000;
         }
 
         double count_F_i(double standart_derivation, double mean){
@@ -192,8 +192,8 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 10;
-    const int MAX_AMOUNT = 20;
+    const int MIN_AMOUNT = 100;
+    const int MAX_AMOUNT = 120;
 
     using People = std::vector<std::shared_ptr<Genome>>;
 
