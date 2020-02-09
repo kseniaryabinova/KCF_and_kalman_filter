@@ -26,7 +26,7 @@ namespace genetic_alg{
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
     std::uniform_int_distribution<int> crossingover_dist_hi(GENOME_LENGTH / 2 + 1, GENOME_LENGTH - 1);
 
-    static const int MAX_ROBUSTNESS = 20'000;
+    static const int MAX_FAIL_COUNTER = 20'000;
 
     class Genome{
     public:
@@ -68,8 +68,6 @@ namespace genetic_alg{
             int i = 0;
 
             while (end != std::string::npos){
-                printf("%s ", genome_string.substr(start, end - start).c_str());
-
                 float gene = std::stof(genome_string.substr(start, end - start));
                 this->data[i++] = gene;
 
@@ -160,7 +158,7 @@ namespace genetic_alg{
                 }
             }
 
-            robustness = MAX_ROBUSTNESS - fail_counter;
+            robustness = MAX_FAIL_COUNTER - fail_counter;
             if (iou_counter == 0){
                 accuracy = 0;
             } else {
