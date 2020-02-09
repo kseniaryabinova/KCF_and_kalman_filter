@@ -41,7 +41,7 @@ void webcam_run(KCFTracker& tracker) {
 			break;
 
 		} else if (key == int('b') && is_first){
-			box = cv::selectROI("webcam", frame);
+//			box = cv::selectROI("webcam", frame);
 			tracker.init(box, frame);
 			printf("after init\n");
 

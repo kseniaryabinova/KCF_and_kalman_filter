@@ -1,13 +1,16 @@
+#include <string>
+
 #include "genetic_algorithm.h"
 #include "run_instance.h"
 
 
 int main(){
-    read_all_groundtruth("../vot2017");
+    std::string path_to_videos = "/media/ksenia/4C62-AB81/vot2017";
+    read_all_groundtruth(path_to_videos);
     genetic_alg::Population population;
 
     for (int i=0; i<10; ++i){
-        run_statistics(population);
+        run_statistics(population, path_to_videos);
     }
     return 0;
 }

@@ -56,6 +56,28 @@ namespace genetic_alg{
             }
         }
 
+        Genome(std::string& genome_string){
+            this->data = new float[GENOME_LENGTH];
+            number = ++counter;
+
+            // genes are separated by space
+            std::string delimiter = " ";
+
+            auto start = 0U;
+            auto end = genome_string.find(delimiter);
+            int i = 0;
+
+            while (end != std::string::npos){
+                printf("%s ", genome_string.substr(start, end - start).c_str());
+
+                float gene = std::stof(genome_string.substr(start, end - start));
+                this->data[i++] = gene;
+
+                start = end + delimiter.length();
+                end = genome_string.find(delimiter, start);
+            }
+        }
+
         int get_number(){
             return number;
         }
@@ -192,8 +214,8 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 100;
-    const int MAX_AMOUNT = 120;
+    const int MIN_AMOUNT = 8;
+    const int MAX_AMOUNT = 10;
 
     using People = std::vector<std::shared_ptr<Genome>>;
 
@@ -203,8 +225,19 @@ namespace genetic_alg{
         Population() {
             fitness_log_file.precision(8);
             std::srand ((unsigned int)(time(nullptr) / 2));
+            int i = 0;
 
-            for (int i=0; i<MIN_AMOUNT; ++i){
+            if (exists(this->genomes_to_load_path)){
+                auto genomes_file = std::fstream(this->genomes_to_load_path);
+
+                std::string line;
+                while (std::getline(genomes_file, line)){
+                    ++i;
+                    people.emplace_back(std::make_unique<Genome>(line));
+                }
+            }
+
+            for (; i < (MIN_AMOUNT + MAX_AMOUNT) / 2; ++i){
                 people.emplace_back(std::make_unique<Genome>(true));
             }
         }
@@ -290,6 +323,8 @@ namespace genetic_alg{
         People people;
 
     private:
+
+        std::string genomes_to_load_path = "../precomputed_genomes.txt";
 
         float get_random(float low, float high){
             return init_rand(mt) * (high - low) + low;

@@ -191,7 +191,7 @@ using namespace std::chrono;
 typedef steady_clock timestamp;
 
 
-void run_statistics(genetic_alg::Population& population) {
+void run_statistics(genetic_alg::Population& population, const std::string& path_to_vids) {
     bool show = false;
     printf("start to run population\n");
 
@@ -206,8 +206,7 @@ void run_statistics(genetic_alg::Population& population) {
                 population.people[i]->get_number(),
                 population.people.size());
 
-        Statistics stat("../vot2017",
-                population.people[i]->get_number());
+        Statistics stat(path_to_vids, population.people[i]->get_number());
         std::unique_ptr<KCFTracker> tracker;
         std::unique_ptr<Kalman> kalman;
 
@@ -256,7 +255,7 @@ void run_statistics(genetic_alg::Population& population) {
                 iou = stat.iou(result, stat.read_current_groundtruth());
             }
 
-            stat.bboxes_to_file(result, iou);ll
+            stat.bboxes_to_file(result, iou);
 
             if (show){
                 imshow("Image", frame);
