@@ -74,6 +74,8 @@ namespace genetic_alg{
                 start = end + delimiter.length();
                 end = genome_string.find(delimiter, start);
             }
+
+            this->data[i] = std::stof(genome_string.substr(start, genome_string.size() - start));
         }
 
         int get_number(){
@@ -164,7 +166,7 @@ namespace genetic_alg{
             } else {
                 accuracy = iou_sum / double(iou_counter) * 100;
             }
-            fitness_value = robustness + accuracy * 10000;
+            fitness_value = robustness + accuracy * MAX_FAIL_COUNTER / 100;
         }
 
         double count_F_i(double standart_derivation, double mean){
@@ -212,8 +214,8 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 8;
-    const int MAX_AMOUNT = 10;
+    const int MIN_AMOUNT = 100;
+    const int MAX_AMOUNT = 120;
 
     using People = std::vector<std::shared_ptr<Genome>>;
 
@@ -248,7 +250,7 @@ namespace genetic_alg{
                 if (person->get_number() != people[i]->get_number()){
                     double distance = people[i].get()->get_distance(person);
 
-                    if (max_distance < distance) {
+                    if (max_distance > distance) {
                         max_distance = distance;
                         index = i;
                     }
@@ -292,7 +294,7 @@ namespace genetic_alg{
             }
 
             printf("add some mutations\n");
-            double threshold = 0.2;
+            double threshold = 0.4;
             for (auto& person : new_population){
                 if (get_random(0, 1) <= threshold){
                     person->mutate();
