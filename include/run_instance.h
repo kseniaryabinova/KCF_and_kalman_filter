@@ -193,6 +193,7 @@ typedef steady_clock timestamp;
 
 void run_statistics(genetic_alg::Population& population, const std::string& path_to_vids) {
     bool show = false;
+    int frames_to_kalman = 2;
     printf("start to run population\n");
 
 #pragma omp parallel for
@@ -200,6 +201,7 @@ void run_statistics(genetic_alg::Population& population, const std::string& path
         cv::Mat frame;
         cv::Rect result;
         double iou = 0;
+        int kalman_counter = 0;
         auto T = timestamp::now();
 
         printf("%d of %zu\n",
@@ -215,9 +217,10 @@ void run_statistics(genetic_alg::Population& population, const std::string& path
         while (stat.try_get_next_file(file_path)) {
             frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
 
-            if (stat.check_is_new_video() || iou == 0) {
+            if (stat.check_is_new_video() || iou == 0 || kalman_counter > frames_to_kalman) {
                 auto coords = stat.read_current_groundtruth();
-                tracker = std::make_unique<KCFTracker>(true, false, true, false);
+                tracker = std::make_unique<KCFTracker>(
+                        true,false, true, false);
                 tracker->init(coords, frame);
 
                 kalman = std::make_unique<Kalman>();
@@ -232,8 +235,9 @@ void run_statistics(genetic_alg::Population& population, const std::string& path
                             cv::Point(coords.x + coords.width, coords.y + coords.height),
                             cv::Scalar(0, 255, 0), 4, 8);
 
-
                 iou = 1;
+                kalman_counter = 0;
+
             } else {
                 T = timestamp::now();
                 result = tracker->update(frame);
@@ -253,6 +257,7 @@ void run_statistics(genetic_alg::Population& population, const std::string& path
                               cv::Scalar(255, 0, 255), 4, 8);
 
                 iou = stat.iou(result, stat.read_current_groundtruth());
+                ++kalman_counter;
             }
 
             stat.bboxes_to_file(result, iou);

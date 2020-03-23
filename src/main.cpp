@@ -5,7 +5,7 @@
 
 
 int main(){
-    std::string path_to_videos = "/media/ksenia/4C62-AB81/vot2017";
+    std::string path_to_videos = "../vot2017";
     read_all_groundtruth(path_to_videos);
     genetic_alg::Population population;
 

@@ -135,7 +135,7 @@ namespace genetic_alg{
             double iou_sum = 0;
             long iou_counter = 0;
             double current_iou = 0;
-            int first_10_counter = 0;
+            int first_n_counter = 0;
 
             long fail_counter = 0;
 
@@ -150,9 +150,9 @@ namespace genetic_alg{
                     if (current_iou == 0){
                         ++fail_counter;
                     } else if (current_iou == 1.){
-                        first_10_counter = 1;
-                    } else if (first_10_counter < 10){
-                        ++first_10_counter;
+                        first_n_counter = 1;
+                    } else if (first_n_counter < 2){
+                        ++first_n_counter;
                     } else {
                         ++iou_counter;
                         iou_sum += current_iou;
