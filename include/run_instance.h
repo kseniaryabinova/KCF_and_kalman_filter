@@ -191,10 +191,16 @@ using namespace std::chrono;
 typedef steady_clock timestamp;
 
 
-void run_statistics(genetic_alg::Population& population, const std::string& path_to_vids) {
+void run_statistics(genetic_alg::Population& population,
+        const std::string& path_to_vids,
+        int threads_amount = 8) {
+
     bool show = false;
     int frames_to_kalman = 2;
     printf("start to run population\n");
+
+    omp_set_dynamic(0);
+    omp_set_num_threads(threads_amount);
 
 #pragma omp parallel for
     for (int i= 0; i<population.people.size(); ++i){
