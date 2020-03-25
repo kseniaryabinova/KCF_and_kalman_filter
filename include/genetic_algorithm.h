@@ -3,6 +3,7 @@
 
 
 #include <ctime>
+#include <cmath>
 #include <random>
 #include <memory>
 #include <vector>
@@ -83,7 +84,7 @@ namespace genetic_alg{
         }
 
         bool operator< (const Genome& that){
-            return this->p < that.p;
+            return this->fitness_value < that.fitness_value;
         }
 
         children make_kids_with(const std::shared_ptr <Genome> &that) {
@@ -112,13 +113,16 @@ namespace genetic_alg{
         }
 
         double get_distance(const std::shared_ptr<Genome>& that){
+            static const float DIFFERENCE_THRESHOLD = 0.01;
             double distance = 0;
 
             for (int i=0; i<GENOME_LENGTH; ++i){
-                distance += (this->data[i] = that->data[i]) * (this->data[i] = that->data[i]);
+                if (std::abs(this->data[i] - that->data[i]) > DIFFERENCE_THRESHOLD) {
+                    ++distance;
+                }
             }
 
-            return sqrt(distance);
+            return distance;
         }
 
         void mutate(){
@@ -151,7 +155,7 @@ namespace genetic_alg{
                         ++fail_counter;
                     } else if (current_iou == 1.){
                         first_n_counter = 1;
-                    } else if (first_n_counter < 2){
+                    } else if (first_n_counter < 1){
                         ++first_n_counter;
                     } else {
                         ++iou_counter;
@@ -260,10 +264,25 @@ namespace genetic_alg{
             return people[index];
         }
 
+        void sort_people_by_fitness(){
+            std::stable_sort(this->people.begin(), this->people.end());
+            std::reverse(this->people.begin(), this->people.end());
+        }
+
         void create_new_popuation(){
+            People people_after_selection;
+
+            printf("sort people by fitness\n");
+            this->sort_people_by_fitness();
+
+//            printf("copy good people\n");
+//            for (int i=0; i<MIN_AMOUNT/2; ) {
+//                for (int j=0; j<std::round(this->people[i]->fitness_value/))
+//            }
+
+
             printf("get potential partners\n");
             double mean = 1. / people.size();
-            People people_after_selection;
             People thresholded_people;
             for (auto& person : people){
                 if (person->p >= get_random(0, mean * 2)){
