@@ -214,8 +214,8 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 10;
-    const int MAX_AMOUNT = 12;
+    const int MIN_AMOUNT = 100;
+    const int MAX_AMOUNT = 120;
 
     using People = std::vector<std::shared_ptr<Genome>>;
 
