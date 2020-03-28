@@ -264,22 +264,35 @@ namespace genetic_alg{
             return people[index];
         }
 
-        void sort_people_by_fitness(){
-            std::stable_sort(this->people.begin(), this->people.end());
-            std::reverse(this->people.begin(), this->people.end());
-        }
 
         void create_new_popuation(){
             People people_after_selection;
 
             printf("sort people by fitness\n");
-            this->sort_people_by_fitness();
+            std::stable_sort(this->people.begin(), this->people.end());
+            std::reverse(this->people.begin(), this->people.end());
 
-//            printf("copy good people\n");
-//            for (int i=0; i<MIN_AMOUNT/2; ) {
-//                for (int j=0; j<std::round(this->people[i]->fitness_value/))
-//            }
+            printf("copy good people\n");
+            double fitness_sum = std::accumulate(
+                    this->people.begin(),
+                    this->people.end(),
+                    0,
+                    [] (const std::shared_ptr<Genome>& person) {
+                        return person->fitness_value;
+                    });
 
+            for (int i=0; i<MIN_AMOUNT/2; ) {
+                int j = 0;
+                double limit = std::round(this->people[i]->fitness_value/fitness_sum*this->people.size());
+
+                for (; j<limit; ++j){
+                    people_after_selection.push_back(this->people[i]);
+                }
+                i += j;
+            }
+
+            printf("remove top 2 people\n");
+            this->people.erase(this->people.begin(), this->people.begin() + 2);
 
             printf("get potential partners\n");
             double mean = 1. / people.size();
