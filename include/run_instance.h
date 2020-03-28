@@ -116,7 +116,7 @@ public:
 
         if (file_names->empty()){
             make_bboxes_file(dirs->back());
-            printf("--- %s\n", dirs->back().c_str());
+//            printf("--- %s\n", dirs->back().c_str());
             dirs->pop_back();
             gt_index = 0;
             if (dirs->empty()){

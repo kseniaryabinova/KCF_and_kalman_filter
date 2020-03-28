@@ -83,10 +83,6 @@ namespace genetic_alg{
             return number;
         }
 
-        bool operator< (const Genome& that){
-            return this->fitness_value < that.fitness_value;
-        }
-
         children make_kids_with(const std::shared_ptr <Genome> &that) {
             int positions[4] = {0, crossingover_dist_lo(mt),
                                 crossingover_dist_hi(mt), GENOME_LENGTH};
@@ -218,8 +214,8 @@ namespace genetic_alg{
 
 
 
-    const int MIN_AMOUNT = 100;
-    const int MAX_AMOUNT = 120;
+    const int MIN_AMOUNT = 10;
+    const int MAX_AMOUNT = 12;
 
     using People = std::vector<std::shared_ptr<Genome>>;
 
@@ -266,37 +262,40 @@ namespace genetic_alg{
 
 
         void create_new_popuation(){
-            People people_after_selection;
+            People copied_people;
 
             printf("sort people by fitness\n");
-            std::stable_sort(this->people.begin(), this->people.end());
+            std::stable_sort(this->people.begin(), this->people.end(),
+                    [](const std::shared_ptr<Genome>& a, const std::shared_ptr<Genome>& b){
+                return a->fitness_value < b->fitness_value;
+            });
             std::reverse(this->people.begin(), this->people.end());
 
             printf("copy good people\n");
-            double fitness_sum = std::accumulate(
-                    this->people.begin(),
-                    this->people.end(),
-                    0,
-                    [] (const std::shared_ptr<Genome>& person) {
-                        return person->fitness_value;
-                    });
+            double fitness_sum = 0;
+            for (auto&& person : this->people){
+                fitness_sum += person->fitness_value;
+            }
 
             for (int i=0; i<MIN_AMOUNT/2; ) {
                 int j = 0;
                 double limit = std::round(this->people[i]->fitness_value/fitness_sum*this->people.size());
 
                 for (; j<limit; ++j){
-                    people_after_selection.push_back(this->people[i]);
+                    copied_people.push_back(this->people[i]);
                 }
                 i += j;
             }
 
-            printf("remove top 2 people\n");
+            printf("remove top 2 people from crossingover\n");
+            auto top_1_person = this->people[0];
+            auto top_2_person = this->people[1];
             this->people.erase(this->people.begin(), this->people.begin() + 2);
 
             printf("get potential partners\n");
             double mean = 1. / people.size();
             People thresholded_people;
+            People people_after_selection;
             for (auto& person : people){
                 if (person->p >= get_random(0, mean * 2)){
                     people_after_selection.push_back(person);
