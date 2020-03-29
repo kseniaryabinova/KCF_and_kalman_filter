@@ -166,7 +166,7 @@ namespace genetic_alg{
             } else {
                 accuracy = iou_sum / double(iou_counter) * 100;
             }
-            fitness_value = robustness + accuracy * MAX_FAIL_COUNTER / 100;
+            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
         }
 
         double count_F_i(double standart_derivation, double mean){
@@ -242,7 +242,7 @@ namespace genetic_alg{
             }
         }
 
-        std::shared_ptr<Genome> find_partner(const std::shared_ptr<Genome> &person) {
+        std::pair<int, std::shared_ptr<Genome>> find_partner(const std::shared_ptr<Genome> &person) {
             int index = 0;
             double max_distance = 0;
 
@@ -257,19 +257,22 @@ namespace genetic_alg{
                 }
             }
 
-            return people[index];
+            return std::make_pair(max_distance, people[index]);
         }
 
 
         void create_new_popuation(){
-            People copied_people;
+            this->ancestors.insert(this->ancestors.end(), this->people.begin(), this->people.end());
+
+            People new_population;
 
             printf("sort people by fitness\n");
-            std::stable_sort(this->people.begin(), this->people.end(),
+            // TODO check theory with sorting
+            std::sort(this->people.begin(), this->people.end(),
                     [](const std::shared_ptr<Genome>& a, const std::shared_ptr<Genome>& b){
-                return a->fitness_value < b->fitness_value;
+                return a->fitness_value > b->fitness_value;
             });
-            std::reverse(this->people.begin(), this->people.end());
+//            std::reverse(this->people.begin(), this->people.end());
 
             printf("copy good people\n");
             double fitness_sum = 0;
@@ -282,14 +285,12 @@ namespace genetic_alg{
                 double limit = std::round(this->people[i]->fitness_value/fitness_sum*this->people.size());
 
                 for (; j<limit; ++j){
-                    copied_people.push_back(this->people[i]);
+                    new_population.push_back(this->people[i]);
                 }
                 i += j;
             }
 
             printf("remove top 2 people from crossingover\n");
-            auto top_1_person = this->people[0];
-            auto top_2_person = this->people[1];
             this->people.erase(this->people.begin(), this->people.begin() + 2);
 
             printf("get potential partners\n");
@@ -304,44 +305,59 @@ namespace genetic_alg{
                 }
             }
 
-            printf("make some kids\n");
-            People new_population;
+            printf("make some children\n");
+            const int DIVERSITY_THRESHOLD = 10;
             for (auto& person : people_after_selection){
-                auto two_children = person->make_kids_with(find_partner(person));
+                auto distance_and_partner = this->find_partner(person);
+
+                if (distance_and_partner.first <= DIVERSITY_THRESHOLD){
+                    std::shared_ptr<Genome> smaller_fitness_partner;
+                    std::shared_ptr<Genome> bigger_fitness_partner;
+                    if (person->fitness_value > distance_and_partner.second->fitness_value){
+                        smaller_fitness_partner = distance_and_partner.second;
+                        bigger_fitness_partner = person;
+                    } else {
+                        smaller_fitness_partner = person;
+                        bigger_fitness_partner = distance_and_partner.second;
+                    }
+
+                    do {
+                        smaller_fitness_partner->mutate();
+                    } while (smaller_fitness_partner->get_distance(bigger_fitness_partner) < DIVERSITY_THRESHOLD);
+                }
+
+                auto two_children = person->make_kids_with(distance_and_partner.second);
                 new_population.emplace_back(std::move(two_children.first));
                 new_population.emplace_back(std::move(two_children.second));
             }
 
             printf("delete redundant people\n");
             if (new_population.size() > MAX_AMOUNT){
-                auto delta = double(new_population.size() - MAX_AMOUNT);
-                double threshold = delta / double(MAX_AMOUNT);
-
-                for(int i=0; i<new_population.size(); i++){
-                    if (get_random(0, 1) < threshold){
-                        new_population.erase(new_population.size() + new_population.begin());
-                    }
-                }
+                new_population.erase(new_population.begin() + MAX_AMOUNT, new_population.end());
             }
-
-            printf("add some mutations\n");
-            double threshold = 0.4;
-            for (auto& person : new_population){
-                if (get_random(0, 1) <= threshold){
-                    person->mutate();
-                }
-            }
-
-            printf("sort thresholded people according to their prob in descending manner\n");
-            std::stable_sort(thresholded_people.begin(), thresholded_people.end());
-            std::reverse(thresholded_people.begin(), thresholded_people.end());
 
             printf("if the population is too small, enhance it\n");
             if (MIN_AMOUNT > new_population.size()){
+                printf("sort thresholded people according to their prob in descending manner\n");
+                std::sort(thresholded_people.begin(), thresholded_people.end(),
+                          [] (const std::shared_ptr<Genome>& a, const std::shared_ptr<Genome>& b) {
+                              return a->fitness_value > b->fitness_value;
+                          });
+//            std::reverse(thresholded_people.begin(), thresholded_people.end());
+
                 auto limit = MIN_AMOUNT - new_population.size();
                 for (int i=0; i<limit; ++i){
                     thresholded_people[i]->mutate();
                     new_population.emplace_back(std::move(thresholded_people[i]));
+                }
+            }
+
+            printf("check for repetitions\n");
+            for (auto&& successor : new_population){
+                for (auto&& predecessor : this->ancestors){
+                    while (successor->get_distance(predecessor) < DIVERSITY_THRESHOLD){
+                        successor->mutate();
+                    }
                 }
             }
 
@@ -354,7 +370,7 @@ namespace genetic_alg{
         People people;
 
     private:
-
+        People ancestors;
         std::string genomes_to_load_path = "../precomputed_genomes.txt";
 
         float get_random(float low, float high){
