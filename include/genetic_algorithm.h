@@ -355,7 +355,7 @@ namespace genetic_alg{
                 printf("sort thresholded people according to their prob in descending manner\n");
                 std::sort(thresholded_people.begin(), thresholded_people.end(),
                           [] (const std::shared_ptr<Genome>& a, const std::shared_ptr<Genome>& b) {
-                              return a->fitness_value > b->fitness_value;
+                              return a->p > b->p;
                           });
 
                 auto limit = MIN_AMOUNT - new_population.size();
