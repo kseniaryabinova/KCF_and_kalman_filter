@@ -204,6 +204,11 @@ void run_statistics(genetic_alg::Population& population,
 
 #pragma omp parallel for
     for (int i= 0; i<population.people.size(); ++i){
+
+        if (population.people[i]->p != -1 and !population.people[i]->is_mutated()){
+            continue;
+        }
+
         cv::Mat frame;
         cv::Rect result;
         double iou = 0;

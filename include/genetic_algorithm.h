@@ -83,6 +83,14 @@ namespace genetic_alg{
             return number;
         }
 
+        bool is_mutated(){
+            return this->mutated;
+        }
+
+        void set_mutated(bool mutated_){
+            this->mutated = mutated_;
+        }
+
         children make_kids_with(const std::shared_ptr <Genome> &that) {
             int positions[4] = {0, crossingover_dist_lo(mt),
                                 crossingover_dist_hi(mt), GENOME_LENGTH};
@@ -122,6 +130,7 @@ namespace genetic_alg{
         }
 
         void mutate(){
+            this->mutated = true;
             double threshold = init_rand(mt);
 
             for (int i=0; i<GENOME_LENGTH; ++i) {
@@ -204,8 +213,8 @@ namespace genetic_alg{
 
     private:
         int number;
-
         double F_i = -1;
+        bool mutated = false;
 
         std::string path_to_bboxes_dir = "../bboxes_info";
     };
@@ -246,11 +255,13 @@ namespace genetic_alg{
             int index = 0;
             double max_distance = 0;
 
+            // FIXME check if people are the same
+
             for (int i = 0; i < people.size(); ++i) {
                 if (person->get_number() != people[i]->get_number()){
                     double distance = people[i].get()->get_distance(person);
 
-                    if (max_distance > distance) {
+                    if (max_distance < distance) {
                         max_distance = distance;
                         index = i;
                     }
@@ -264,15 +275,18 @@ namespace genetic_alg{
         void create_new_popuation(){
             this->ancestors.insert(this->ancestors.end(), this->people.begin(), this->people.end());
 
+            printf("reset mutated property to false\n");
+            for (auto&& person : this->people){
+                person->set_mutated(false);
+            }
+
             People new_population;
 
-            printf("sort people by fitness\n");
-            // TODO check theory with sorting
+            printf("sort people by fitness in descending order\n");
             std::sort(this->people.begin(), this->people.end(),
                     [](const std::shared_ptr<Genome>& a, const std::shared_ptr<Genome>& b){
                 return a->fitness_value > b->fitness_value;
             });
-//            std::reverse(this->people.begin(), this->people.end());
 
             printf("copy good people\n");
             double fitness_sum = 0;
@@ -298,7 +312,7 @@ namespace genetic_alg{
             People thresholded_people;
             People people_after_selection;
             for (auto& person : people){
-                if (person->p >= get_random(0, mean * 2)){
+                if (person->p >= mean){
                     people_after_selection.push_back(person);
                 } else {
                     thresholded_people.push_back(person);
@@ -343,7 +357,6 @@ namespace genetic_alg{
                           [] (const std::shared_ptr<Genome>& a, const std::shared_ptr<Genome>& b) {
                               return a->fitness_value > b->fitness_value;
                           });
-//            std::reverse(thresholded_people.begin(), thresholded_people.end());
 
                 auto limit = MIN_AMOUNT - new_population.size();
                 for (int i=0; i<limit; ++i){
@@ -353,10 +366,14 @@ namespace genetic_alg{
             }
 
             printf("check for repetitions\n");
-            for (auto&& successor : new_population){
-                for (auto&& predecessor : this->ancestors){
-                    while (successor->get_distance(predecessor) < DIVERSITY_THRESHOLD){
-                        successor->mutate();
+            if (this->ancestors.size() > MAX_AMOUNT){
+                for (auto&& successor : new_population){
+                    for (auto&& predecessor : this->ancestors){
+                        if (successor->get_number() != predecessor->get_number()){
+                            while (successor->get_distance(predecessor) < DIVERSITY_THRESHOLD){
+                                successor->mutate();
+                            }
+                        }
                     }
                 }
             }
