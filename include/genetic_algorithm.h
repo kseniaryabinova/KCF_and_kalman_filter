@@ -27,7 +27,7 @@ namespace genetic_alg{
     std::uniform_int_distribution<int> crossingover_dist_lo(2, GENOME_LENGTH / 2 - 1);
     std::uniform_int_distribution<int> crossingover_dist_hi(GENOME_LENGTH / 2 + 1, GENOME_LENGTH - 1);
 
-    static const int MAX_FAIL_COUNTER = 20'000;
+    static const int MAX_FAIL_COUNTER = 40'000;
 
     class Genome{
     public:
@@ -169,13 +169,16 @@ namespace genetic_alg{
                 }
             }
 
-            robustness = MAX_FAIL_COUNTER - fail_counter;
+            this->robustness = double(MAX_FAIL_COUNTER - fail_counter) / double(MAX_FAIL_COUNTER) * 100;
             if (iou_counter == 0){
-                accuracy = 0;
+                this->accuracy = 0;
             } else {
-                accuracy = iou_sum / double(iou_counter) * 100;
+                this->accuracy = iou_sum / double(iou_counter) * 100;
             }
-            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
+//            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
+            double beta = 3;
+            fitness_value = (1 + beta*beta)*(
+                    (this->robustness * this->accuracy)/(beta*beta*this->robustness + this->accuracy));
         }
 
         double count_F_i(double standart_derivation, double mean){

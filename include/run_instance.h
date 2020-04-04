@@ -196,7 +196,7 @@ void run_statistics(genetic_alg::Population& population,
         int threads_amount = 8) {
 
     bool show = false;
-    int frames_to_kalman = 5;
+    int frames_to_kalman = 50000;
     printf("start to run population\n");
 
     omp_set_dynamic(0);
