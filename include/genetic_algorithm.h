@@ -178,7 +178,7 @@ namespace genetic_alg{
 //            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
             double beta = 3;
             fitness_value = (1 + beta*beta)*(
-                    (this->robustness * this->accuracy)/(beta*beta*this->robustness + this->accuracy));
+                    (this->robustness * this->accuracy)/(beta*beta*this->accuracy + this->robustness));
         }
 
         double count_F_i(double standart_derivation, double mean){

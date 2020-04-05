@@ -9,7 +9,7 @@ int main(){
     read_all_groundtruth(path_to_videos);
     genetic_alg::Population population;
 
-    for (int i=0; i<10; ++i){
+    for (int i=0; i<100; ++i){
         run_statistics(population, path_to_videos, 48);
     }
     return 0;
