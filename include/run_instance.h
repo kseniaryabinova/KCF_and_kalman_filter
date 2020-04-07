@@ -185,138 +185,97 @@ private:
 #include "kcftracker.hpp"
 #include "kalman_filter.h"
 #include <chrono>
-#include <omp.h>
 
 using namespace std::chrono;
 typedef steady_clock timestamp;
 
 
-void run_statistics(genetic_alg::Population& population,
-        const std::string& path_to_vids,
-        int threads_amount = 8) {
+void run_statistics(genetic_alg::Genome& person,
+        const std::string& path_to_vids) {
 
-    bool show = false;
+    bool show = true;
+    bool record_video = true;
+    cv::VideoWriter video_recorder;
     int frames_to_kalman = 50000;
     printf("start to run population\n");
 
-    omp_set_dynamic(0);
-    omp_set_num_threads(threads_amount);
+    cv::Mat frame;
+    cv::Rect result;
+    double iou = 0;
+    int kalman_counter = 0;
+    auto T = timestamp::now();
 
-#pragma omp parallel for
-    for (int i= 0; i<population.people.size(); ++i){
+    Statistics stat(path_to_vids, person.get_number());
+    std::unique_ptr<KCFTracker> tracker;
+    std::unique_ptr<Kalman> kalman;
 
-        if (population.people[i]->p != -1 and !population.people[i]->is_mutated()){
-            continue;
+    std::string file_path;
+
+    while (stat.try_get_next_file(file_path)) {
+        frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
+
+        if (stat.check_is_new_video() || iou == 0 || kalman_counter > frames_to_kalman) {
+            if (stat.check_is_new_video() && record_video){
+                video_recorder.release();
+                video_recorder = cv::VideoWriter(
+                        path(file_path).parent_path().filename().string() + ".avi",
+                        cv::VideoWriter::fourcc('M','J','P','G'),
+                        30.0, cv::Size(frame.cols, frame.rows));
+            }
+
+            auto coords = stat.read_current_groundtruth();
+            tracker = std::make_unique<KCFTracker>(true, false, true, false);
+            tracker->init(coords, frame);
+
+            kalman = std::make_unique<Kalman>();
+            kalman->set_from_genome(person.data);
+
+            if (show)
+                rectangle(frame, cv::Point(coords.x, coords.y),
+                        cv::Point(coords.x + coords.width, coords.y + coords.height),
+                        cv::Scalar(0, 255, 0), 4, 8);
+
+            iou = 1;
+            kalman_counter = 0;
+
+        } else {
+            T = timestamp::now();
+            result = tracker->update(frame);
+
+            if (show)
+                rectangle(frame, cv::Point(result.x, result.y),
+                          cv::Point(result.x + result.width, result.y + result.height),
+                          cv::Scalar(0, 255, 255), 4, 8);
+
+            result = kalman->predict(
+                    double(duration_cast<microseconds>(timestamp::now() - T).count()) / 1000'000.,
+                    result);
+
+            if (show)
+                rectangle(frame, cv::Point(result.x, result.y),
+                          cv::Point(result.x + result.width, result.y + result.height),
+                          cv::Scalar(255, 0, 255), 4, 8);
+
+            iou = stat.iou(result, stat.read_current_groundtruth());
+            ++kalman_counter;
         }
 
-        cv::Mat frame;
-        cv::Rect result;
-        double iou = 0;
-        int kalman_counter = 0;
-        auto T = timestamp::now();
+        stat.bboxes_to_file(result, iou);
 
-        printf("%d of %zu\n",
-                population.people[i]->get_number(),
-                population.people.size());
+        if (show){
+//            imshow("Image", frame);
+//            if (27 == cv::waitKey(3)) {
+//                return;
+//            }
+        }
 
-        Statistics stat(path_to_vids, population.people[i]->get_number());
-        std::unique_ptr<KCFTracker> tracker;
-        std::unique_ptr<Kalman> kalman;
-
-        std::string file_path;
-
-        while (stat.try_get_next_file(file_path)) {
-            frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
-
-            if (stat.check_is_new_video() || iou == 0 || kalman_counter > frames_to_kalman) {
-                auto coords = stat.read_current_groundtruth();
-                tracker = std::make_unique<KCFTracker>(
-                        true,false, true, false);
-                tracker->init(coords, frame);
-
-                kalman = std::make_unique<Kalman>();
-//                printf("\nperson #%d: ", population.people[i]->get_number());
-//                for (int j=0; j<genetic_alg::GENOME_LENGTH; ++j){
-//                    printf("[%d]=%f ", j, population.people[i]->data[j]);
-//                }
-                kalman->set_from_genome(population.people[i]->data);
-
-                if (show)
-                    rectangle(frame, cv::Point(coords.x, coords.y),
-                            cv::Point(coords.x + coords.width, coords.y + coords.height),
-                            cv::Scalar(0, 255, 0), 4, 8);
-
-                iou = 1;
-                kalman_counter = 0;
-
-            } else {
-                T = timestamp::now();
-                result = tracker->update(frame);
-
-                if (show)
-                    rectangle(frame, cv::Point(result.x, result.y),
-                              cv::Point(result.x + result.width, result.y + result.height),
-                              cv::Scalar(0, 255, 255), 4, 8);
-
-                result = kalman->predict(
-                        double(duration_cast<microseconds>(timestamp::now() - T).count()) / 1000'000.,
-                        result);
-
-                if (show)
-                    rectangle(frame, cv::Point(result.x, result.y),
-                              cv::Point(result.x + result.width, result.y + result.height),
-                              cv::Scalar(255, 0, 255), 4, 8);
-
-                iou = stat.iou(result, stat.read_current_groundtruth());
-                ++kalman_counter;
-            }
-
-            stat.bboxes_to_file(result, iou);
-
-            if (show){
-                imshow("Image", frame);
-//                if (27 == cv::waitKey(3)) {
-//                    return;
-//                }
-            }
+        if (record_video) {
+            video_recorder.write(frame);
         }
     }
 
-    // -----------------------------------------------------------------------------------------
-
-    printf("start selection\n");
-
-    for (auto& person : population.people){
-        person->count_fitness();
-    }
-
-    double mean_sum = 0;
-    for (auto& person : population.people){
-        mean_sum += person->fitness_value;
-    }
-    double mean = mean_sum / population.people.size();
-
-    double variance_delta_sum = 0;
-    for (auto& person : population.people){
-        variance_delta_sum += (person->fitness_value - mean) * (person->fitness_value - mean);
-    }
-    double variance = variance_delta_sum / (population.people.size() - 1);
-    double standart_derivation = sqrt(variance);
-
-    double F_i_sum = 0;
-    for (auto& person : population.people){
-        F_i_sum += person->count_F_i(standart_derivation, mean);
-    }
-
-    for (auto& person : population.people){
-        person->count_probability(F_i_sum);
-        person->log_info();
-    }
-
-    // -----------------------------------------------------------------------------------------
-
-    printf("start create new population\n");
-    population.create_new_popuation();
+    person.count_fitness();
+    printf("acc=%f rob=%f fitness=%f\n", person.accuracy, person.robustness, person.fitness_value);
 }
 
 
