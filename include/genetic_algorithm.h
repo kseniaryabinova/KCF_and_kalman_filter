@@ -160,7 +160,7 @@ namespace genetic_alg{
                         ++fail_counter;
                     } else if (current_iou == 1.){
                         first_n_counter = 1;
-                    } else if (first_n_counter < 1){
+                    } else if (first_n_counter < 10){
                         ++first_n_counter;
                     } else {
                         ++iou_counter;
@@ -176,7 +176,7 @@ namespace genetic_alg{
                 this->accuracy = iou_sum / double(iou_counter) * 100;
             }
 //            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
-            double beta = 3;
+            double beta = 6;
             fitness_value = (1 + beta*beta)*(
                     (this->robustness * this->accuracy)/(beta*beta*this->accuracy + this->robustness));
         }
@@ -297,14 +297,15 @@ namespace genetic_alg{
                 fitness_sum += person->fitness_value;
             }
 
-            for (int i=0; i<MIN_AMOUNT/2; ) {
-                int j = 0;
-                double limit = std::round(this->people[i]->fitness_value/fitness_sum*this->people.size());
+            for (int i=0; new_population.size() < MIN_AMOUNT / 4; ++i) {
+                double limit = std::round(this->people[i]->fitness_value / fitness_sum * this->people.size() / 2);
+                if (limit == 0) {
+                    break;
+                }
 
-                for (; j<limit; ++j){
+                for (int j=0; j<limit; ++j){
                     new_population.push_back(this->people[i]);
                 }
-                i += j;
             }
 
             printf("remove top 2 people from crossingover\n");
