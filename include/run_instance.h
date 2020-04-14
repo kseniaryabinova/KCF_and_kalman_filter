@@ -95,7 +95,7 @@ public:
     }
 
 
-    double iou(const cv::Rect& box1, const cv::Rect& box2){
+    double giou(const cv::Rect& box1, const cv::Rect& box2){
         double x1 = std::max(box1.x, box2.x);
         double y1 = std::max(box1.y, box2.y);
         double x2 = std::min(box1.x + box1.width,  box2.x + box2.width);
@@ -104,7 +104,18 @@ public:
         double intersection = std::max(x2 - x1, 0.) * std::max(y2 - y1, 0.);
         double union_ = box1.width * box1.height + box2.width * box2.height - intersection;
 
-        return intersection / union_;
+        double area_1 = box1.height * box1.width;
+        double area_2 = box2.height * box2.width;
+
+        double x1_c = std::min(box1.x, box2.x);
+        double y1_c = std::min(box1.y, box2.y);
+        double x2_c = std::max(box1.x + box1.width,  box2.x + box2.width);
+        double y2_c = std::max(box1.y + box1.height, box2.y + box2.height);
+        double area_c = (x2_c - x1_c) * (y2_c - y1_c);
+
+        double giou = intersection / union_ - (area_c - union_) / area_c;
+
+        return giou;
     }
 
     bool check_is_new_video(){
@@ -267,7 +278,7 @@ void run_statistics(genetic_alg::Population& population,
                               cv::Point(result.x + result.width, result.y + result.height),
                               cv::Scalar(255, 0, 255), 4, 8);
 
-                iou = stat.iou(result, stat.read_current_groundtruth());
+                iou = stat.giou(result, stat.read_current_groundtruth());
                 ++kalman_counter;
             }
 

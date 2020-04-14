@@ -160,7 +160,7 @@ namespace genetic_alg{
                         ++fail_counter;
                     } else if (current_iou == 1.){
                         first_n_counter = 1;
-                    } else if (first_n_counter < 10){
+                    } else if (first_n_counter < 2){
                         ++first_n_counter;
                     } else {
                         ++iou_counter;
@@ -176,7 +176,7 @@ namespace genetic_alg{
                 this->accuracy = iou_sum / double(iou_counter) * 100;
             }
 //            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
-            double beta = 6;
+            double beta = 3;
             fitness_value = (1 + beta*beta)*(
                     (this->robustness * this->accuracy)/(beta*beta*this->accuracy + this->robustness));
         }
