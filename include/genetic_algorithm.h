@@ -156,8 +156,9 @@ namespace genetic_alg{
                 while (std::getline(boxes_file, str)){
                     current_iou = std::stod(str);
 
-                    if (current_iou == 0){
+                    if (current_iou <= 0){
                         ++fail_counter;
+                        iou_sum += current_iou;
                     } else if (current_iou == 1.){
                         first_n_counter = 1;
                     } else if (first_n_counter < 2){
