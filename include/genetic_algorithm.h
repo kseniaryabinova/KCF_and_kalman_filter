@@ -159,6 +159,7 @@ namespace genetic_alg{
                     if (current_iou <= 0){
                         ++fail_counter;
                         iou_sum += current_iou;
+                        ++iou_counter;
                     } else if (current_iou == 1.){
                         first_n_counter = 1;
                     } else if (first_n_counter < 1){
@@ -176,10 +177,15 @@ namespace genetic_alg{
             } else {
                 this->accuracy = iou_sum / double(iou_counter) * 100;
             }
-//            fitness_value = 1/(1/robustness + 1/(accuracy * MAX_FAIL_COUNTER / 100));
+
+            double temp_acc = this->accuracy;
+            if (this->accuracy < 0) {
+                temp_acc = 1/std::abs(this->accuracy);
+            }
+
             double beta = 3;
             fitness_value = (1 + beta*beta)*(
-                    (this->robustness * this->accuracy)/(beta*beta*this->accuracy + this->robustness));
+                    (this->robustness * temp_acc)/(beta*beta*temp_acc + this->robustness));
         }
 
         double count_F_i(double standart_derivation, double mean){
