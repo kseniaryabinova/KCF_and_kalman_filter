@@ -159,12 +159,12 @@ namespace genetic_alg{
                     if (current_iou <= 0){
                         ++fail_counter;
                         iou_sum += current_iou;
-                    } else if (current_iou == 1.){
-                        first_n_counter = 1;
-                    } else if (first_n_counter < 2){
-                        ++first_n_counter;
+//                    } else if (current_iou == 1.){
+//                        first_n_counter = 1;
+//                    } else if (first_n_counter < 1){
+//                        ++first_n_counter;
                     } else {
-                        ++iou_counter;
+//                        ++iou_counter;
                         iou_sum += current_iou;
                     }
                 }

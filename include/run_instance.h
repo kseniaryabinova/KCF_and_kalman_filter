@@ -239,7 +239,7 @@ void run_statistics(genetic_alg::Population& population,
         while (stat.try_get_next_file(file_path)) {
             frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
 
-            if (stat.check_is_new_video() || iou == 0 || kalman_counter > frames_to_kalman) {
+            if (stat.check_is_new_video() || iou <= 0 || kalman_counter > frames_to_kalman) {
                 auto coords = stat.read_current_groundtruth();
                 tracker = std::make_unique<KCFTracker>(
                         true,false, true, false);
