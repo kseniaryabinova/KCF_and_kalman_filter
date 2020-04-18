@@ -117,7 +117,7 @@ namespace genetic_alg{
         }
 
         double get_distance(const std::shared_ptr<Genome>& that){
-            static const float DIFFERENCE_THRESHOLD = 0.01;
+            static const float DIFFERENCE_THRESHOLD = 0.05;
             double distance = 0;
 
             for (int i=0; i<GENOME_LENGTH; ++i){
@@ -162,7 +162,7 @@ namespace genetic_alg{
                         ++iou_counter;
                     } else if (current_iou == 1.){
                         first_n_counter = 1;
-                    } else if (first_n_counter < 1){
+                    } else if (first_n_counter < 7){
                         ++first_n_counter;
                     } else {
                         ++iou_counter;
