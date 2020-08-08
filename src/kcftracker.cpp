@@ -94,7 +94,7 @@ KCFTracker::KCFTracker(bool hog, bool fixed_window, bool multiscale, bool lab)
 
     // Parameters equal in all cases
     lambda = 0.0001;
-    padding = 2.5; 
+    padding = 2.0;
     //output_sigma_factor = 0.1;
     output_sigma_factor = 0.125;
 
@@ -102,11 +102,12 @@ KCFTracker::KCFTracker(bool hog, bool fixed_window, bool multiscale, bool lab)
     if (hog) {    // HOG
         // VOT
         interp_factor = 0.012;
+//        interp_factor = 0.002;
         sigma = 0.6; 
         // TPAMI
         //interp_factor = 0.02;
         //sigma = 0.5; 
-        cell_size = 4;
+        cell_size = 6;
         _hogfeatures = true;
 
         if (lab) {
@@ -138,7 +139,7 @@ KCFTracker::KCFTracker(bool hog, bool fixed_window, bool multiscale, bool lab)
 
     if (multiscale) { // multiscale
         template_size = 96;
-        //template_size = 100;
+        //template_size = 96;
         scale_step = 1.05;
         scale_weight = 0.95;
         if (!fixed_window) {

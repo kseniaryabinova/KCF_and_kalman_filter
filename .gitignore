@@ -1,2 +1,5 @@
 .idea
-cmake-build-debug
+cmake-build-debug*
+calcs
+*.log
+bboxes_info
