@@ -27,7 +27,7 @@ void read_all_groundtruth(const std::string &path_to_dirs){
     std::string substr;
 
     std::vector<path> dirs;
-    for(auto& p : directory_iterator(path_to_dirs)) {
+    for(auto& p : directory_iterator(path_to_dirs / "sequences")) {
         if (p.status().type() == file_type::directory) {
             dirs.push_back(p.path());
         }
@@ -81,9 +81,10 @@ public:
         is_new_video = true;
         prefix = std::to_string(pref);
         gt_index = 0;
+        create_directory(path_to_bboxes_dir);
 
         if (dirs->empty()){
-            for(auto& p : directory_iterator(this->path_to_dirs)) {
+            for(auto& p : directory_iterator(this->path_to_dirs / "sequences")) {
                 if (p.status().type() == file_type::directory) {
                     dirs->push_back(p.path());
                 }
@@ -168,7 +169,7 @@ protected:
     }
 
     void make_file_names(const path &dir){
-        for (auto& file : directory_iterator(dir)){
+        for (auto& file : directory_iterator(dir / "color")){
             if (file.status().type() == file_type::regular &&
                 file.path().extension() == ".jpg"){
 
@@ -237,7 +238,7 @@ void run_statistics(genetic_alg::Population& population,
         std::string file_path;
 
         while (stat.try_get_next_file(file_path)) {
-            frame = cv::imread(file_path, CV_LOAD_IMAGE_COLOR);
+            frame = cv::imread(file_path, cv::IMREAD_COLOR);
 
             if (stat.check_is_new_video() || iou <= 0 || kalman_counter > frames_to_kalman) {
                 auto coords = stat.read_current_groundtruth();

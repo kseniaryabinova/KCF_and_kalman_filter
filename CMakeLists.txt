@@ -17,9 +17,10 @@ if (OPENMP_FOUND)
 endif()
 
 include_directories(include)
-FILE(GLOB_RECURSE sourcefiles "src/*.cpp")
-add_executable( KCF ${sourcefiles} include/run_instance.h src/main.cpp)
+add_executable( KCF src/fhog.cpp src/kcftracker.cpp include/run_instance.h src/main.cpp)
+add_executable( run_tracker include/fhog.hpp src/fhog.cpp src/kcftracker.cpp src/runtracker.cpp)
 target_link_libraries( KCF ${OpenCV_LIBS})
+target_link_libraries( run_tracker ${OpenCV_LIBS})
 
 
 

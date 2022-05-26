@@ -20,6 +20,49 @@ Here:
 
 -1.04996 -0.35197 2.14865 1.81949 1.0531 0.379274 -0.972355 -4.83614 -0.664763 1.58524 3.81422 0.125361 -0.805518 1.51277 -2.40536 -3.02137 2.54712 0.250593 0.310221 0.0344269 -0.52078 2.17617 0.0965927 0.910537 0.0220096 0.745542 -1.34083 0.2846 -1.66556 -1.72201 -0.333888 2.63724 1.7406 -2.1478 -0.25823 0.908437 3.43149 -0.00610241 -0.767901 0.0167775 1.48063 0.0126195 0.167397 -0.0533417 -0.0268063 -0.04304 -0.0294877 -2.30189 0.188723 -0.300192 1.17634 1.12888 0.0306505 0.0520604 -0.249356 -3.18886
 
+
+## Some more details
+
+Compiled and tested with OpenCV 4.2.0 
+
+### How to load VOT2017 dataset
+
+```bash
+pip install git+https://github.com/votchallenge/vot-toolkit-python
+# if you have the same problem with numpy version that I did, then run this command:
+# pip install numpy=1.21
+
+mkdir vot2017
+vot initialize vot2017 --workspace vot2017
+# After loading process finishes, 
+# you'll have directory with 60 sequences
+```
+
+### How to build and run
+
+Build train code and test code
+```bash
+mkdir build && cd build
+cmake ..
+make -j4
+```
+
+```bash
+# Start train
+
+KCF
+```
+
+```bash
+# Or run test on a webcam stream. 
+# Genome already included in code (look at src/runtracker.cpp)
+
+run_tracker
+
+# When you run run_tracker, 
+# press B and select BBox to track, than press Enter
+```
+
 ## Acknowledgments
 
 [KCF repository](https://github.com/joaofaro/KCFcpp)

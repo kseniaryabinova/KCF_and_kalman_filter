@@ -7,7 +7,7 @@
 int main(){
     std::string path_to_videos = "../vot2017";
     read_all_groundtruth(path_to_videos);
-    genetic_alg::Population pop&ulation;
+    genetic_alg::Population population;
 
     for (int i=0; i<100; ++i){
         run_statistics(population, path_to_videos, 48);
